@@ -2,6 +2,7 @@
 import argparse
 import io
 import re
+from html import escape
 from pathlib import Path
 from xml.dom import minidom
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -48,6 +49,26 @@ DEMO_COMPONENTS_CSS = """#demo-components-frame {
     border: 6px solid #f00;
     padding: clamp(1rem, 3vw, 2rem);
     margin-block: 2rem;
+}
+
+#demo-components-frame #demo-components .cmp-title__text,
+#demo-components-frame [id^="demo-label-"] h3 {
+    color: #005d73;
+    font-size: clamp(1.25rem, 2vw, 1.6rem);
+    font-weight: 700;
+    margin: 0 0 .35rem;
+}
+
+#demo-components-frame [id^="demo-meta-"] p {
+    color: #343a40;
+    margin: 0 0 1rem;
+    overflow-wrap: anywhere;
+}
+
+#demo-components-frame .cmp-separator__horizontal-rule {
+    border: 0;
+    border-top: 1px solid #879097;
+    margin-block: 1.5rem;
 }
 """
 
@@ -102,8 +123,9 @@ def add_demo_components(document: minidom.Document) -> None:
         component("demo_separator_start", "separator"),
         component("demo_title", "title", type="h2",
                   **{"jcr:title": "Demo Components", "id": "demo-components"}),
-        component("demo_text", "text", text="<p>Text component example for Bali Surf Camp.</p>",
-                  textIsRich="{Boolean}true"),
+        component("demo_text", "text",
+                  text="<h3>Text Component Example for Bali Surf Camp</h3>",
+                  textIsRich="{Boolean}true", id="demo-label-text"),
         component("demo_button", "button", link=SOURCE, **{"jcr:title": "View Bali Surf Camp"}),
         component("demo_download", "download", fileReference=image,
                   **{"jcr:title": "Download the surf camp photo", "actionText": "Download photo"}),
@@ -138,8 +160,49 @@ def add_demo_components(document: minidom.Document) -> None:
         component("demo_separator_end", "separator"),
     ]
     frame = component("demo_components_frame", "container", id="demo-components-frame")
-    for example in examples:
+    titles = {
+        "button": "Button",
+        "download": "Download",
+        "sharing": "Social Media Sharing",
+        "image": "Image",
+        "teaser": "Teaser",
+        "carousel": "Carousel",
+        "embed": "Embed",
+        "container": "Container",
+        "separator": "Separator",
+        "accordion": "Accordion",
+        "tabs": "Tabs",
+        "list": "List",
+        "breadcrumb": "Breadcrumb",
+        "contentfragment": "Content Fragment",
+        "contentfragmentlist": "Content Fragment List",
+        "experiencefragment": "Experience Fragment",
+        "byline": "Byline",
+        "image-list": "Image List",
+        "helloworld": "Hello World Component",
+    }
+    frame.appendChild(examples[0])
+    for example in examples[1:-1]:
+        resource_type = example.getAttribute("sling:resourceType")
+        component_type = resource_type.rsplit("/", 1)[-1]
+        name = example.tagName
+        label = titles.get(component_type)
+        if label:
+            frame.appendChild(component(
+                f"{name}_label", "text", id=f"demo-label-{component_type}",
+                text=f"<h3>{escape(label)}</h3>", textIsRich="{Boolean}true",
+            ))
+        metadata = component(
+            f"{name}_resource_type", "text", id=f"demo-meta-{component_type}",
+            text=f"<p><strong>Resource Type is</strong> <code>{escape(resource_type)}</code></p>",
+            textIsRich="{Boolean}true",
+        )
+        if label:
+            frame.appendChild(metadata)
         frame.appendChild(example)
+        if not label:
+            frame.appendChild(metadata)
+        frame.appendChild(component(f"{name}_divider", "separator"))
     body.insertBefore(frame, first)
 
 
