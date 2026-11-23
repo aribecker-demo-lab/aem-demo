@@ -13,10 +13,13 @@ SAMPLE_PACKAGE = (
 ADVENTURES = "/content/wknd/us/en/adventures"
 SOURCE = f"{ADVENTURES}/bali-surf-camp"
 TARGET = f"{ADVENTURES}/bali-surf-camp-demo"
+TEMPLATE_SOURCE = "/conf/wknd/settings/wcm/templates/adventure-page-template"
+TEMPLATE_TARGET = f"{TEMPLATE_SOURCE}-demo"
 
 FILTER = f"""<?xml version="1.0" encoding="UTF-8"?>
 <workspaceFilter version="1.0">
     <filter root="{TARGET}" mode="replace"/>
+    <filter root="{TEMPLATE_TARGET}" mode="replace"/>
 </workspaceFilter>
 """
 
@@ -37,6 +40,23 @@ def build_package(wknd_release: Path, output: Path) -> None:
         sample_bytes = release.read(SAMPLE_PACKAGE)
     with ZipFile(io.BytesIO(sample_bytes)) as sample:
         page = sample.read(f"jcr_root{SOURCE}/.content.xml").decode("utf-8")
+        template_prefix = f"jcr_root{TEMPLATE_SOURCE}/"
+        template_files = {
+            name.removeprefix(template_prefix): sample.read(name)
+            for name in sample.namelist()
+            if name.startswith(template_prefix) and not name.endswith("/")
+        }
+
+    template_files[".content.xml"] = template_files[".content.xml"].replace(
+        b'jcr:title="Adventure Page Template"',
+        b'jcr:title="Adventure Page Template - Demo"',
+        1,
+    )
+    for name in ("structure/.content.xml", "initial/.content.xml"):
+        template_files[name] = template_files[name].replace(
+            f'cq:template="{TEMPLATE_SOURCE}"'.encode(),
+            f'cq:template="{TEMPLATE_TARGET}"'.encode(),
+        )
 
     page, title_count = re.subn(
         'jcr:title="Bali Surf Camp"',
@@ -77,6 +97,8 @@ def build_package(wknd_release: Path, output: Path) -> None:
         package.writestr("META-INF/vault/filter.xml", FILTER)
         package.writestr("META-INF/vault/properties.xml", PROPERTIES)
         package.writestr(f"jcr_root{TARGET}/.content.xml", page)
+        for name, data in template_files.items():
+            package.writestr(f"jcr_root{TEMPLATE_TARGET}/{name}", data)
 
 
 if __name__ == "__main__":
