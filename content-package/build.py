@@ -45,7 +45,7 @@ DEMO_CLIENTLIB_DEFINITION = """<?xml version="1.0" encoding="UTF-8"?>
 
 DEMO_COMPONENTS_CSS = """#demo-components-frame {
     box-sizing: border-box;
-    border: 6px solid #222;
+    border: 6px solid #f00;
     padding: clamp(1rem, 3vw, 2rem);
     margin-block: 2rem;
 }
