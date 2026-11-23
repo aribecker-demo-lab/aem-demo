@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0"
+    jcr:primaryType="cq:Component"
+    jcr:title="Weather"
+    jcr:description="Shows current weather for Bali with automatic provider fallback."
+    componentGroup="Weekend Content Demo"/>

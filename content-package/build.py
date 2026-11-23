@@ -19,6 +19,7 @@ TEMPLATE_TARGET = f"{TEMPLATE_SOURCE}-demo"
 POLICY_ROOT = "/conf/wknd/settings/wcm/policies"
 ORIGINAL_CONTAINER_POLICY = "wknd/components/container/policy_213106331986985"
 DEMO_CONTAINER_POLICY = "wknd/components/container/adventure-demo"
+WEATHER_COMPONENT = "/apps/wknd-demo/components/weather"
 DEMO_CLIENTLIB = "/apps/wknd/clientlibs/clientlib-demo-components"
 
 FILTER = f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -26,6 +27,7 @@ FILTER = f"""<?xml version="1.0" encoding="UTF-8"?>
     <filter root="{TARGET}" mode="replace"/>
     <filter root="{TEMPLATE_TARGET}" mode="replace"/>
     <filter root="{POLICY_ROOT}/{DEMO_CONTAINER_POLICY}" mode="replace"/>
+    <filter root="{WEATHER_COMPONENT}" mode="replace"/>
     <filter root="{DEMO_CLIENTLIB}" mode="replace"/>
 </workspaceFilter>
 """
@@ -57,6 +59,25 @@ DEMO_COMPONENTS_CSS = """[id$="-components-frame"] {
 
 #core-v2-components-frame { border-color: #7625a5; }
 #core-v3-components-frame { border-color: #1555a3; }
+#weather-components-frame { border-color: #db6714; }
+
+.wknd-demo-weather__temperature {
+    color: #98420a;
+    font-size: clamp(2rem, 6vw, 3rem);
+    font-weight: 700;
+    margin: 0;
+}
+
+.wknd-demo-weather__condition { text-transform: capitalize; }
+
+.wknd-demo-weather__details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 2rem;
+}
+
+.wknd-demo-weather__details dd { margin: 0; font-weight: 700; }
+.wknd-demo-weather__source { font-size: .875rem; }
 
 [id$="-components-frame"] [id^="demo-preview-"] {
     box-sizing: border-box;
@@ -366,7 +387,7 @@ def add_demo_components(document: minidom.Document) -> None:
     def component(node_name, component_type, **properties):
         node = document.createElement(node_name)
         node.setAttribute("jcr:primaryType", "nt:unstructured")
-        node.setAttribute("sling:resourceType", component_type if component_type.startswith("core/")
+        node.setAttribute("sling:resourceType", component_type if "/" in component_type
                           else f"wknd/components/{component_type}")
         for key, value in properties.items():
             node.setAttribute(key, value)
@@ -567,8 +588,15 @@ def add_demo_components(document: minidom.Document) -> None:
             panel.appendChild(component(f"{name}_divider", "separator"))
         body.insertBefore(panel, first)
 
+    weather_panel = component("weather_panel", "container", id="weather-components-frame")
+    weather_panel.appendChild(component(
+        "heading", "title", type="h2", **{"jcr:title": "Weekend Content Demo"},
+    ))
+    weather_panel.appendChild(component("weather", "wknd-demo/components/weather"))
+    body.insertBefore(weather_panel, first)
 
-def build_package(wknd_release: Path, output: Path) -> None:
+
+def build_package(wknd_release: Path, output: Path, weather_source: Path) -> None:
     with ZipFile(wknd_release) as release:
         sample_bytes = release.read(SAMPLE_PACKAGE)
     with ZipFile(io.BytesIO(sample_bytes)) as sample:
@@ -600,7 +628,8 @@ def build_package(wknd_release: Path, output: Path) -> None:
             if attribute.name.startswith("xmlns:"):
                 policy.setAttribute(attribute.name, attribute.value)
         policy.setAttribute("jcr:title", "WKND Adventure Demo Content")
-        allowed = ["group:WKND.Content", *(f"/libs/{row[0]}" for row in CORE_COMPONENTS)]
+        allowed = ["group:WKND.Content", "group:Weekend Content Demo",
+                   *(f"/libs/{row[0]}" for row in CORE_COMPONENTS)]
         policy.setAttribute("components", "[" + ",".join(allowed) + "]")
         demo_policy = policy.toxml(encoding="UTF-8")
     template_files["policies/.content.xml"] = template_files["policies/.content.xml"].replace(
@@ -656,6 +685,11 @@ def build_package(wknd_release: Path, output: Path) -> None:
         package.writestr(
             f"jcr_root{POLICY_ROOT}/{DEMO_CONTAINER_POLICY}/.content.xml", demo_policy,
         )
+        package.writestr(f"{clientlib}/js.txt", "weather.js\n")
+        package.write(weather_source / "clientlib/weather.js", f"{clientlib}/weather.js")
+        for name in (".content.xml", "weather.html"):
+            package.write(weather_source / "component" / name,
+                          f"jcr_root{WEATHER_COMPONENT}/{name}")
         for name, data in template_files.items():
             package.writestr(f"jcr_root{TEMPLATE_TARGET}/{name}", data)
 
@@ -664,5 +698,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("wknd_release", type=Path)
     parser.add_argument("output", type=Path)
+    parser.add_argument("--weather-source", type=Path, default=Path("weather"))
     args = parser.parse_args()
-    build_package(args.wknd_release, args.output)
+    build_package(args.wknd_release, args.output, args.weather_source)
