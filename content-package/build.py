@@ -15,11 +15,13 @@ SOURCE = f"{ADVENTURES}/bali-surf-camp"
 TARGET = f"{ADVENTURES}/bali-surf-camp-demo"
 TEMPLATE_SOURCE = "/conf/wknd/settings/wcm/templates/adventure-page-template"
 TEMPLATE_TARGET = f"{TEMPLATE_SOURCE}-demo"
+DEMO_CLIENTLIB = "/apps/wknd/clientlibs/clientlib-demo-components"
 
 FILTER = f"""<?xml version="1.0" encoding="UTF-8"?>
 <workspaceFilter version="1.0">
     <filter root="{TARGET}" mode="replace"/>
     <filter root="{TEMPLATE_TARGET}" mode="replace"/>
+    <filter root="{DEMO_CLIENTLIB}" mode="replace"/>
 </workspaceFilter>
 """
 
@@ -29,9 +31,24 @@ PROPERTIES = """<?xml version="1.0" encoding="UTF-8"?>
     <entry key="group">wknd-demo</entry>
     <entry key="name">wknd-demo-adventure</entry>
     <entry key="version">1.0.0</entry>
-    <entry key="packageType">content</entry>
+    <entry key="packageType">mixed</entry>
     <entry key="dependencies">com.adobe.aem.guides:aem-guides-wknd.ui.content.sample:4.0.4</entry>
 </properties>
+"""
+
+DEMO_CLIENTLIB_DEFINITION = """<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0"
+    jcr:primaryType="cq:ClientLibraryFolder"
+    categories="[wknd.site]"
+    allowProxy="{Boolean}true"/>
+"""
+
+DEMO_COMPONENTS_CSS = """#demo-components-frame {
+    box-sizing: border-box;
+    border: 6px solid #222;
+    padding: clamp(1rem, 3vw, 2rem);
+    margin-block: 2rem;
+}
 """
 
 
@@ -120,8 +137,10 @@ def add_demo_components(document: minidom.Document) -> None:
         component("demo_hello_world", "helloworld", text="Hello from Bali Surf Camp."),
         component("demo_separator_end", "separator"),
     ]
+    frame = component("demo_components_frame", "container", id="demo-components-frame")
     for example in examples:
-        body.insertBefore(example, first)
+        frame.appendChild(example)
+    body.insertBefore(frame, first)
 
 
 def build_package(wknd_release: Path, output: Path) -> None:
@@ -187,6 +206,10 @@ def build_package(wknd_release: Path, output: Path) -> None:
         package.writestr("META-INF/vault/filter.xml", FILTER)
         package.writestr("META-INF/vault/properties.xml", PROPERTIES)
         package.writestr(f"jcr_root{TARGET}/.content.xml", page)
+        clientlib = f"jcr_root{DEMO_CLIENTLIB}"
+        package.writestr(f"{clientlib}/.content.xml", DEMO_CLIENTLIB_DEFINITION)
+        package.writestr(f"{clientlib}/css.txt", "demo-components.css\n")
+        package.writestr(f"{clientlib}/demo-components.css", DEMO_COMPONENTS_CSS)
         for name, data in template_files.items():
             package.writestr(f"jcr_root{TEMPLATE_TARGET}/{name}", data)
 
