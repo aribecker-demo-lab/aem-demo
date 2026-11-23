@@ -11,3 +11,15 @@ Demo con AEM Cloud SDK `2026.2.24464` y WKND Sites `4.0.4`. El Dockerfile descar
 El servicio tiene URL pública y almacenamiento efímero. Los cambios hechos en Author pueden perderse al reiniciar o redesplegar. El paquete WKND se incluye en cada build.
 
 [Release oficial de WKND](https://github.com/adobe/aem-guides-wknd/releases/tag/aem-guides-wknd-4.0.4) · [Blueprints de Render](https://render.com/docs/infrastructure-as-code)
+
+## Paquete de la aventura adicional
+
+El build genera e instala `wknd-demo-adventure-1.0.0.zip`. La copia **Bali Surf Camp — Demo** aparece en la pestaña **All** de [Adventures](https://aem-demo-author.onrender.com/content/wknd/us/en/adventures.html).
+
+Para producir el ZIP por separado, descargá `aem-guides-wknd.all-4.0.4.zip` del release oficial y ejecutá:
+
+```sh
+python3 content-package/build.py aem-guides-wknd.all-4.0.4.zip wknd-demo-adventure-1.0.0.zip
+```
+
+El paquete requiere el contenido de muestra de WKND 4.0.4 y su filtro abarca solo `/content/wknd/us/en/adventures/bali-surf-camp-demo`.
