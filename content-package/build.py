@@ -3,7 +3,7 @@ import argparse
 import io
 import re
 from pathlib import Path
-from xml.etree import ElementTree
+from xml.dom import minidom
 from zipfile import ZIP_DEFLATED, ZipFile
 
 SAMPLE_PACKAGE = (
@@ -58,7 +58,19 @@ def build_package(wknd_release: Path, output: Path) -> None:
         page,
         flags=re.MULTILINE,
     )
-    ElementTree.fromstring(page)
+    with minidom.parseString(page) as document:
+        tabs = document.getElementsByTagName("tabs")[0]
+        bring_tab = next(
+            child
+            for child in tabs.childNodes
+            if child.nodeType == child.ELEMENT_NODE
+            and child.getAttribute("cq:panelTitle") == "What to Bring"
+        )
+        demo_tab = bring_tab.cloneNode(deep=True)
+        document.renameNode(demo_tab, None, "demo")
+        demo_tab.setAttribute("cq:panelTitle", "Demo")
+        tabs.insertBefore(demo_tab, bring_tab.nextSibling)
+        page = document.toxml(encoding="UTF-8")
 
     output.parent.mkdir(parents=True, exist_ok=True)
     with ZipFile(output, "w", compression=ZIP_DEFLATED) as package:
