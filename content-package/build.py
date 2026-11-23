@@ -73,6 +73,158 @@ DEMO_COMPONENTS_CSS = """#demo-components-frame {
 """
 
 
+# Titles, descriptions, and immediate supertypes from WKND 4.0.4 and the pinned AEM SDK.
+COMPONENT_METADATA = {
+    "accordion": (
+        "Accordion",
+        None,
+        "core/wcm/components/accordion/v1/accordion",
+        "Accordion (v1)",
+        "Displays content as an accordion",
+    ),
+    "breadcrumb": (
+        "Breadcrumb",
+        None,
+        "core/wcm/components/breadcrumb/v3/breadcrumb",
+        "Breadcrumb (v3)",
+        "Displays the position of the current page within the site hierarchy",
+    ),
+    "button": (
+        "Button",
+        None,
+        "core/wcm/components/button/v2/button",
+        "Button (v2)",
+        "Button",
+    ),
+    "byline": (
+        "Byline",
+        "Displays a contributor's byline.",
+        "core/wcm/components/image/v3/image",
+        "Image (v3)",
+        "Smart Adaptive Image",
+    ),
+    "carousel": (
+        "Carousel",
+        None,
+        "core/wcm/components/carousel/v1/carousel",
+        "Carousel (v1)",
+        "Cycles through a list of generic content items",
+    ),
+    "container": (
+        "Container",
+        None,
+        "core/wcm/components/container/v1/container",
+        "Container (v1)",
+        "Container component, used to group other components and apply a common style or layout.",
+    ),
+    "contentfragment": (
+        "Content Fragment",
+        None,
+        "core/wcm/components/contentfragment/v1/contentfragment",
+        "Content Fragment (v1)",
+        "Displays the elements of a Content Fragment or a selection thereof",
+    ),
+    "contentfragmentlist": (
+        "Content Fragment List",
+        None,
+        "core/wcm/components/contentfragmentlist/v2/contentfragmentlist",
+        "Content Fragment List (v2)",
+        "Displays a list of Content Fragments",
+    ),
+    "download": (
+        "Download",
+        None,
+        "core/wcm/components/download/v2/download",
+        "Download (v2)",
+        "Displays a downloadable DAM asset with optional title, description, metadata and action text.",
+    ),
+    "embed": (
+        "Embed",
+        None,
+        "core/wcm/components/embed/v2/embed",
+        "Embed (v2)",
+        "Embed a third-party widget or safe free-form HTML.",
+    ),
+    "experiencefragment": (
+        "Experience Fragment",
+        None,
+        "core/wcm/components/experiencefragment/v2/experiencefragment",
+        "Experience Fragment (v2)",
+        "Displays an experience fragment variation",
+    ),
+    "helloworld": (
+        "Hello World Component",
+        None,
+        None,
+        None,
+        None,
+    ),
+    "image": (
+        "Image",
+        None,
+        "core/wcm/components/image/v3/image",
+        "Image (v3)",
+        "Smart Adaptive Image",
+    ),
+    "image-list": (
+        "Image List",
+        None,
+        "core/wcm/components/list/v3/list",
+        "List (v3)",
+        "Configurable collection of items or content",
+    ),
+    "list": (
+        "List",
+        None,
+        "core/wcm/components/list/v3/list",
+        "List (v3)",
+        "Configurable collection of items or content",
+    ),
+    "separator": (
+        "Separator",
+        None,
+        "core/wcm/components/separator/v1/separator",
+        "Separator (v1)",
+        "Displays a horizontal rule for separating content",
+    ),
+    "sharing": (
+        "Social Media Sharing",
+        None,
+        "core/wcm/components/sharing/v1/sharing",
+        "Social Media Sharing (v1)",
+        "Core WCM Social Media Sharing Component (v1)",
+    ),
+    "tabs": (
+        "Tabs",
+        None,
+        "core/wcm/components/tabs/v1/tabs",
+        "Tabs (v1)",
+        "Displays content as a list of tabs",
+    ),
+    "teaser": (
+        "Teaser",
+        None,
+        "core/wcm/components/teaser/v2/teaser",
+        "Teaser (v2)",
+        "Teaser block allowing a combination of an image, title, rich text description and actions/links",
+    ),
+    "text": (
+        "Text",
+        None,
+        "core/wcm/components/text/v2/text",
+        "Text (v2)",
+        "Rich Text Section",
+    ),
+    "title": (
+        "Title",
+        None,
+        "core/wcm/components/title/v3/title",
+        "Title (v3)",
+        "Section Heading",
+    ),
+}
+
+
 def add_demo_components(document: minidom.Document) -> None:
     """Insert examples in the editable body before the existing adventure."""
     root = document.getElementsByTagName("root")[0]
@@ -160,41 +312,43 @@ def add_demo_components(document: minidom.Document) -> None:
         component("demo_separator_end", "separator"),
     ]
     frame = component("demo_components_frame", "container", id="demo-components-frame")
-    titles = {
-        "button": "Button",
-        "download": "Download",
-        "sharing": "Social Media Sharing",
-        "image": "Image",
-        "teaser": "Teaser",
-        "carousel": "Carousel",
-        "embed": "Embed",
-        "container": "Container",
-        "separator": "Separator",
-        "accordion": "Accordion",
-        "tabs": "Tabs",
-        "list": "List",
-        "breadcrumb": "Breadcrumb",
-        "contentfragment": "Content Fragment",
-        "contentfragmentlist": "Content Fragment List",
-        "experiencefragment": "Experience Fragment",
-        "byline": "Byline",
-        "image-list": "Image List",
-        "helloworld": "Hello World Component",
-    }
     frame.appendChild(examples[0])
     for example in examples[1:-1]:
         resource_type = example.getAttribute("sling:resourceType")
         component_type = resource_type.rsplit("/", 1)[-1]
         name = example.tagName
-        label = titles.get(component_type)
+        title, description, supertype, super_title, super_description = COMPONENT_METADATA[
+            component_type
+        ]
+        label = component_type not in {"text", "title"}
         if label:
             frame.appendChild(component(
                 f"{name}_label", "text", id=f"demo-label-{component_type}",
-                text=f"<h3>{escape(label)}</h3>", textIsRich="{Boolean}true",
+                text=f"<h3>{escape(title)}</h3>", textIsRich="{Boolean}true",
             ))
+        if component_type == "image-list":
+            description = "WKND list that presents pages as cards with images."
+        elif component_type == "helloworld":
+            description = "Example component that displays authored text and a Sling Model message."
+        elif description is None:
+            description = "WKND proxy. See the description of the supertype."
+
+        details = (
+            f"<p><strong>Component title</strong> {escape(title)}<br>"
+            f"<strong>Resource Type is</strong> <code>{escape(resource_type)}</code><br>"
+            f"<strong>Component description</strong> {escape(description)}</p>"
+        )
+        if supertype:
+            details += (
+                f"<p><strong>Supertype title</strong> {escape(super_title)}<br>"
+                f"<strong>Supertype Resource Type</strong> <code>{escape(supertype)}</code><br>"
+                f"<strong>Supertype description</strong> {escape(super_description)}</p>"
+            )
+        else:
+            details += "<p><strong>Supertype</strong> None defined.</p>"
         metadata = component(
             f"{name}_resource_type", "text", id=f"demo-meta-{component_type}",
-            text=f"<p><strong>Resource Type is</strong> <code>{escape(resource_type)}</code></p>",
+            text=details,
             textIsRich="{Boolean}true",
         )
         if label:
