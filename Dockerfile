@@ -1,7 +1,13 @@
 # syntax=docker/dockerfile:1
+FROM python:3.12-slim AS content-package
+
+ADD --chmod=0644 --checksum=sha256:93d915fe3cbdc33b612406f1919610e8aa3fc6ffd06e25136caf49a3dec26592 https://github.com/adobe/aem-guides-wknd/releases/download/aem-guides-wknd-4.0.4/aem-guides-wknd.all-4.0.4.zip /tmp/aem-guides-wknd.all-4.0.4.zip
+COPY content-package/build.py /tmp/build.py
+RUN python /tmp/build.py /tmp/aem-guides-wknd.all-4.0.4.zip /tmp/wknd-demo-adventure-1.0.0.zip
+
 FROM docker.io/aemdesign/aem:sdk-2026.2.24464
 
 ENV AEM_RUNMODE=-Dsling.run.modes=author,crx3,crx3tar,localdev
 
-# AEM installs content packages from this directory during startup.
-ADD --chmod=0644 --checksum=sha256:93d915fe3cbdc33b612406f1919610e8aa3fc6ffd06e25136caf49a3dec26592 https://github.com/adobe/aem-guides-wknd/releases/download/aem-guides-wknd-4.0.4/aem-guides-wknd.all-4.0.4.zip /aem/crx-quickstart/install/aem-guides-wknd.all-4.0.4.zip
+COPY --from=content-package /tmp/aem-guides-wknd.all-4.0.4.zip /aem/crx-quickstart/install/
+COPY --from=content-package /tmp/wknd-demo-adventure-1.0.0.zip /aem/crx-quickstart/install/
