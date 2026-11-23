@@ -16,12 +16,16 @@ SOURCE = f"{ADVENTURES}/bali-surf-camp"
 TARGET = f"{ADVENTURES}/bali-surf-camp-demo"
 TEMPLATE_SOURCE = "/conf/wknd/settings/wcm/templates/adventure-page-template"
 TEMPLATE_TARGET = f"{TEMPLATE_SOURCE}-demo"
+POLICY_ROOT = "/conf/wknd/settings/wcm/policies"
+ORIGINAL_CONTAINER_POLICY = "wknd/components/container/policy_213106331986985"
+DEMO_CONTAINER_POLICY = "wknd/components/container/adventure-demo"
 DEMO_CLIENTLIB = "/apps/wknd/clientlibs/clientlib-demo-components"
 
 FILTER = f"""<?xml version="1.0" encoding="UTF-8"?>
 <workspaceFilter version="1.0">
     <filter root="{TARGET}" mode="replace"/>
     <filter root="{TEMPLATE_TARGET}" mode="replace"/>
+    <filter root="{POLICY_ROOT}/{DEMO_CONTAINER_POLICY}" mode="replace"/>
     <filter root="{DEMO_CLIENTLIB}" mode="replace"/>
 </workspaceFilter>
 """
@@ -44,14 +48,17 @@ DEMO_CLIENTLIB_DEFINITION = """<?xml version="1.0" encoding="UTF-8"?>
     allowProxy="{Boolean}true"/>
 """
 
-DEMO_COMPONENTS_CSS = """#demo-components-frame {
+DEMO_COMPONENTS_CSS = """[id$="-components-frame"] {
     box-sizing: border-box;
     border: 6px solid #f00;
     padding: clamp(1rem, 3vw, 2rem);
     margin-block: 2rem;
 }
 
-#demo-components-frame [id^="demo-preview-"] {
+#core-v2-components-frame { border-color: #7625a5; }
+#core-v3-components-frame { border-color: #1555a3; }
+
+[id$="-components-frame"] [id^="demo-preview-"] {
     box-sizing: border-box;
     border: 6px solid #16803c;
     min-width: 0;
@@ -60,20 +67,20 @@ DEMO_COMPONENTS_CSS = """#demo-components-frame {
 }
 
 #demo-components-frame #demo-components .cmp-title__text,
-#demo-components-frame [id^="demo-label-"] h3 {
+[id$="-components-frame"] [id^="demo-label-"] h3 {
     color: #005d73;
     font-size: clamp(1.25rem, 2vw, 1.6rem);
     font-weight: 700;
     margin: 0 0 .35rem;
 }
 
-#demo-components-frame [id^="demo-meta-"] p {
+[id$="-components-frame"] [id^="demo-meta-"] p {
     color: #343a40;
     margin: 0 0 1rem;
     overflow-wrap: anywhere;
 }
 
-#demo-components-frame .cmp-separator__horizontal-rule {
+[id$="-components-frame"] .cmp-separator__horizontal-rule {
     border: 0;
     border-top: 1px solid #879097;
     margin-block: 1.5rem;
@@ -233,6 +240,120 @@ COMPONENT_METADATA = {
 }
 
 
+# Authorable v2/v3 definitions present in the pinned AEM Cloud SDK.
+CORE_COMPONENTS = (
+    (
+        "core/wcm/components/breadcrumb/v2/breadcrumb",
+        "Breadcrumb (v2)",
+        "Displays the position of the current page within the site hierarchy",
+    ),
+    (
+        "core/wcm/components/breadcrumb/v3/breadcrumb",
+        "Breadcrumb (v3)",
+        "Displays the position of the current page within the site hierarchy",
+    ),
+    (
+        "core/wcm/components/button/v2/button",
+        "Button (v2)",
+        "Button",
+    ),
+    (
+        "core/wcm/components/contentfragmentlist/v2/contentfragmentlist",
+        "Content Fragment List (v2)",
+        "Displays a list of Content Fragments",
+    ),
+    (
+        "core/wcm/components/form/container/v2/container",
+        "Core Form Container (v2)",
+        "Container allowing to construct simple forms for visitors to submit information",
+    ),
+    (
+        "core/wcm/components/download/v2/download",
+        "Download (v2)",
+        "Displays a downloadable DAM asset with optional title, description, metadata and action text.",
+    ),
+    (
+        "core/wcm/components/embed/v2/embed",
+        "Embed (v2)",
+        "Embed a third-party widget or safe free-form HTML.",
+    ),
+    (
+        "core/wcm/components/experiencefragment/v2/experiencefragment",
+        "Experience Fragment (v2)",
+        "Displays an experience fragment variation",
+    ),
+    (
+        "core/wcm/components/form/button/v2/button",
+        "Form Button (v2)",
+        "Allows visitors to interact with the form",
+    ),
+    (
+        "core/wcm/components/form/hidden/v2/hidden",
+        "Form Hidden (v2)",
+        "Allows form owner to add hidden data to the form",
+    ),
+    (
+        "core/wcm/components/form/options/v2/options",
+        "Form Options (v2)",
+        "Allows visitors to select available options",
+    ),
+    (
+        "core/wcm/components/form/text/v2/text",
+        "Form Text (v2)",
+        "Allows visitors to enter text information",
+    ),
+    (
+        "core/wcm/components/image/v2/image",
+        "Image (v2)",
+        "Smart Adaptive Image",
+    ),
+    (
+        "core/wcm/components/image/v3/image",
+        "Image (v3)",
+        "Smart Adaptive Image",
+    ),
+    (
+        "core/wcm/components/languagenavigation/v2/languagenavigation",
+        "Language Navigation (v2)",
+        "Global language structure navigation",
+    ),
+    (
+        "core/wcm/components/list/v2/list",
+        "List (v2)",
+        "Configurable collection of items or content",
+    ),
+    (
+        "core/wcm/components/list/v3/list",
+        "List (v3)",
+        "Configurable collection of items or content",
+    ),
+    (
+        "core/wcm/components/navigation/v2/navigation",
+        "Navigation (v2)",
+        "Collects a list of pages to display in a navigation tree.",
+    ),
+    (
+        "core/wcm/components/teaser/v2/teaser",
+        "Teaser (v2)",
+        "Teaser block allowing a combination of an image, title, rich text description and actions/links",
+    ),
+    (
+        "core/wcm/components/text/v2/text",
+        "Text (v2)",
+        "Rich Text Section",
+    ),
+    (
+        "core/wcm/components/title/v2/title",
+        "Title (v2)",
+        "Section Heading",
+    ),
+    (
+        "core/wcm/components/title/v3/title",
+        "Title (v3)",
+        "Section Heading",
+    ),
+)
+
 def add_demo_components(document: minidom.Document) -> None:
     """Insert examples in the editable body before the existing adventure."""
     root = document.getElementsByTagName("root")[0]
@@ -245,7 +366,8 @@ def add_demo_components(document: minidom.Document) -> None:
     def component(node_name, component_type, **properties):
         node = document.createElement(node_name)
         node.setAttribute("jcr:primaryType", "nt:unstructured")
-        node.setAttribute("sling:resourceType", f"wknd/components/{component_type}")
+        node.setAttribute("sling:resourceType", component_type if component_type.startswith("core/")
+                          else f"wknd/components/{component_type}")
         for key, value in properties.items():
             node.setAttribute(key, value)
         return node
@@ -371,12 +493,87 @@ def add_demo_components(document: minidom.Document) -> None:
         frame.appendChild(component(f"{name}_divider", "separator"))
     body.insertBefore(frame, first)
 
+    examples_by_type = {
+        node.getAttribute("sling:resourceType").rsplit("/", 1)[-1]: node
+        for node in examples[1:-1]
+    }
+    for version in ("v2", "v3"):
+        panel = component(f"core_{version}_components", "container",
+                          id=f"core-{version}-components-frame")
+        panel.appendChild(component(
+            "heading", "title", type="h2",
+            **{"jcr:title": f"Core Components {version}"},
+        ))
+        panel.appendChild(component("heading_divider", "separator"))
+        form = None
+        for resource_type, title, description in CORE_COMPONENTS:
+            if f"/{version}/" not in resource_type:
+                continue
+            is_form = "/form/" in resource_type
+            kind = resource_type.rsplit("/", 1)[-1]
+            name = f"form_{kind}" if is_form else kind
+            label = component(
+                f"{name}_label", "text", id=f"demo-label-core-{version}-{name}",
+                text=(f"<h3>{escape(title)}</h3><p><strong>Resource Type is</strong> "
+                      f"<code>{escape(resource_type)}</code><br>{escape(description)}</p>"),
+                textIsRich="{Boolean}true",
+            )
+            if is_form:
+                settings = {
+                    "text": {"name": "demoText", "type": "text"},
+                    "options": {"name": "demoOption", "type": "radio",
+                                "source": "local"},
+                    "hidden": {"name": "demoHidden", "value": "WKND"},
+                    "button": {"name": "demoReset", "type": "reset"},
+                    "container": {},
+                }[kind]
+                example = component(name, resource_type, **{"jcr:title": title, **settings})
+                if kind == "options":
+                    option = document.createElement("items")
+                    option.setAttribute("jcr:primaryType", "nt:unstructured")
+                    item = document.createElement("item0")
+                    item.setAttribute("jcr:primaryType", "nt:unstructured")
+                    item.setAttribute("text", "Bali Surf Camp")
+                    item.setAttribute("value", "bali")
+                    option.appendChild(item)
+                    example.appendChild(option)
+                if kind != "container":
+                    form.appendChild(label)
+                    form.appendChild(example)
+                    form.appendChild(component(f"{name}_divider", "separator"))
+                    continue
+                form = example
+            elif kind in examples_by_type:
+                example = examples_by_type[kind].cloneNode(deep=True)
+                document.renameNode(example, None, name)
+                example.setAttribute("sling:resourceType", resource_type)
+                if example.hasAttribute("id"):
+                    example.removeAttribute("id")
+                if kind == "title":
+                    example.setAttribute("jcr:title", "Bali Surf Camp")
+                elif kind == "text":
+                    example.setAttribute("text", "<p>Explore the Bali Surf Camp adventure.</p>")
+            else:
+                example = component(
+                    name, resource_type, navigationRoot="/content/wknd" if kind == "languagenavigation"
+                    else "/content/wknd/us/en", structureDepth="{Long}2",
+                    skipNavigationRoot="{Boolean}true",
+                )
+            panel.appendChild(label)
+            preview = component(f"{name}_preview", "container",
+                                id=f"demo-preview-core-{version}-{name}")
+            preview.appendChild(example)
+            panel.appendChild(preview)
+            panel.appendChild(component(f"{name}_divider", "separator"))
+        body.insertBefore(panel, first)
+
 
 def build_package(wknd_release: Path, output: Path) -> None:
     with ZipFile(wknd_release) as release:
         sample_bytes = release.read(SAMPLE_PACKAGE)
     with ZipFile(io.BytesIO(sample_bytes)) as sample:
         page = sample.read(f"jcr_root{SOURCE}/.content.xml").decode("utf-8")
+        source_policies = sample.read(f"jcr_root{POLICY_ROOT}/.content.xml")
         template_prefix = f"jcr_root{TEMPLATE_SOURCE}/"
         template_files = {
             name.removeprefix(template_prefix): sample.read(name)
@@ -394,6 +591,23 @@ def build_package(wknd_release: Path, output: Path) -> None:
             f'cq:template="{TEMPLATE_SOURCE}"'.encode(),
             f'cq:template="{TEMPLATE_TARGET}"'.encode(),
         )
+
+    with minidom.parseString(source_policies) as policies:
+        original = policies.getElementsByTagName(ORIGINAL_CONTAINER_POLICY.rsplit("/", 1)[1])[0]
+        policy = original.cloneNode(deep=True)
+        policies.renameNode(policy, "http://www.jcp.org/jcr/1.0", "jcr:root")
+        for attribute in policies.documentElement.attributes.values():
+            if attribute.name.startswith("xmlns:"):
+                policy.setAttribute(attribute.name, attribute.value)
+        policy.setAttribute("jcr:title", "WKND Adventure Demo Content")
+        allowed = ["group:WKND.Content", *(f"/libs/{row[0]}" for row in CORE_COMPONENTS)]
+        policy.setAttribute("components", "[" + ",".join(allowed) + "]")
+        demo_policy = policy.toxml(encoding="UTF-8")
+    template_files["policies/.content.xml"] = template_files["policies/.content.xml"].replace(
+        f'cq:policy="{ORIGINAL_CONTAINER_POLICY}"'.encode(),
+        f'cq:policy="{DEMO_CONTAINER_POLICY}"'.encode(),
+    )
+    page = page.replace(f'cq:template="{TEMPLATE_SOURCE}"', f'cq:template="{TEMPLATE_TARGET}"', 1)
 
     page, title_count = re.subn(
         'jcr:title="Bali Surf Camp"',
@@ -439,6 +653,9 @@ def build_package(wknd_release: Path, output: Path) -> None:
         package.writestr(f"{clientlib}/.content.xml", DEMO_CLIENTLIB_DEFINITION)
         package.writestr(f"{clientlib}/css.txt", "demo-components.css\n")
         package.writestr(f"{clientlib}/demo-components.css", DEMO_COMPONENTS_CSS)
+        package.writestr(
+            f"jcr_root{POLICY_ROOT}/{DEMO_CONTAINER_POLICY}/.content.xml", demo_policy,
+        )
         for name, data in template_files.items():
             package.writestr(f"jcr_root{TEMPLATE_TARGET}/{name}", data)
 
