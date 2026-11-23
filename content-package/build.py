@@ -51,6 +51,14 @@ DEMO_COMPONENTS_CSS = """#demo-components-frame {
     margin-block: 2rem;
 }
 
+#demo-components-frame [id^="demo-preview-"] {
+    box-sizing: border-box;
+    border: 6px solid #16803c;
+    min-width: 0;
+    padding: clamp(.75rem, 2vw, 1.5rem);
+    margin-block: .75rem;
+}
+
 #demo-components-frame #demo-components .cmp-title__text,
 #demo-components-frame [id^="demo-label-"] h3 {
     color: #005d73;
@@ -353,7 +361,11 @@ def add_demo_components(document: minidom.Document) -> None:
         )
         if label:
             frame.appendChild(metadata)
-        frame.appendChild(example)
+        preview = component(
+            f"{name}_preview", "container", id=f"demo-preview-{component_type}",
+        )
+        preview.appendChild(example)
+        frame.appendChild(preview)
         if not label:
             frame.appendChild(metadata)
         frame.appendChild(component(f"{name}_divider", "separator"))
