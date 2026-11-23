@@ -1,11 +1,9 @@
 services:
   - type: web
     name: aem-demo-author
-    runtime: image
-    image:
-      url: docker.io/aemdesign/aem:sdk-2026.2.24464
+    runtime: docker
     plan: 2c-4g
-    healthCheckPath: /
+    autoDeployTrigger: 'off'
     envVars:
       - key: PORT
         value: "8080"
