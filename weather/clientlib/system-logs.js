@@ -1,4 +1,33 @@
 (function () {
+    var logTokens = new RegExp([
+        /(?<time>\b(?:\d{4}-\d{2}-\d{2}[T ]|\d{2}\.\d{2}\.\d{4} |\d{2}\/[A-Za-z]{3}\/\d{4}:)?\d{2}:\d{2}:\d{2}(?:[.,]\d+)?(?:Z| ?[+-]\d{2}:?\d{2})?\b)/,
+        /(?<url>https?:\/\/[^\s<>"']+|(?<=\b(?:GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS) )\/[^\s"']*|(?<=\[)\/(?:content|apps|libs|etc\.clientlibs)\/[^\s\]]*)/,
+        /(?<level>\b(?:ERROR|FATAL|WARN(?:ING)?|INFO|DEBUG|TRACE)\b)(?=[\]*\s·:])/,
+        /(?<component>\bWKND_WEATHER\b|\b(?:org|com|dev|net|io)\.(?:[\w$-]+\.)+[\w$-]+\b|\b[A-Za-z0-9_-]+\/components\/[\w/-]+)/,
+        /(?<context>\b(?:trace|status|durationMs|remainingMs|provider|role|temperatureC|humidityPct|windKmh)=[^\s]+)/,
+    ].map(function (pattern) { return pattern.source; }).join("|"), "g");
+
+    function colorLog(target, text, emptyMessage) {
+        target.textContent = "";
+        if (!text) {
+            target.textContent = emptyMessage;
+            return;
+        }
+        var fragment = document.createDocumentFragment();
+        var end = 0;
+        for (var match of text.matchAll(logTokens)) {
+            fragment.append(text.slice(end, match.index));
+            var token = document.createElement("span");
+            var kind = Object.keys(match.groups).find(function (key) { return match.groups[key]; });
+            token.className = "wknd-log-" + (kind === "level" ? "level-" + match[0].toLowerCase() : kind);
+            token.textContent = match[0];
+            fragment.append(token);
+            end = match.index + match[0].length;
+        }
+        fragment.append(text.slice(end));
+        target.append(fragment);
+    }
+
     function initialize() {
         document.querySelectorAll("[data-system-logs-url]").forEach(function (panel) {
             if (panel.dataset.systemLogsInitialized) return;
@@ -31,7 +60,7 @@
                                 if (!response.ok) throw new Error("Could not load this log.");
                                 return response.text();
                             })
-                            .then(function (text) { content.textContent = text || "Empty log."; })
+                            .then(function (text) { colorLog(content, text, "Empty log."); })
                             .catch(function (error) { content.textContent = error.message; })
                             .finally(function () { loading = false; });
                     });
@@ -70,12 +99,12 @@
                 } else {
                     renderLink.hidden = true;
                 }
-                panel.querySelector("[data-system-logs-build]").textContent =
-                    data.build.join("\n") || "No build events available.";
-                panel.querySelector("[data-system-logs-runtime]").textContent =
-                    data.runtime.join("\n") || "No matching recent events.";
-                panel.querySelector("[data-system-logs-packages]").textContent =
-                    data.packageLogs.join("\n") || "AEM error.log is empty or unavailable.";
+                colorLog(panel.querySelector("[data-system-logs-build]"),
+                    data.build.join("\n"), "No build events available.");
+                colorLog(panel.querySelector("[data-system-logs-runtime]"),
+                    data.runtime.join("\n"), "No matching recent events.");
+                colorLog(panel.querySelector("[data-system-logs-packages]"),
+                    data.packageLogs.join("\n"), "AEM error.log is empty or unavailable.");
                 var list = panel.querySelector("[data-system-logs-status]");
                 list.textContent = "";
                 data.status.forEach(function (status) {

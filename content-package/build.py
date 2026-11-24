@@ -121,6 +121,19 @@ DEMO_COMPONENTS_CSS = """[id$="-components-frame"] {
     max-height: 28rem;
     overflow: auto;
 }
+.wknd-system-logs .wknd-log-time { color: #24539a; }
+.wknd-system-logs .wknd-log-url { color: #006763; text-decoration: underline; }
+.wknd-system-logs .wknd-log-component { color: #67419a; font-weight: 600; }
+.wknd-system-logs .wknd-log-context { color: #504269; }
+.wknd-system-logs [class^="wknd-log-level-"] { font-weight: 700; }
+.wknd-system-logs .wknd-log-level-error,
+.wknd-system-logs .wknd-log-level-fatal { color: #a3182a; background: #ffe2e5; }
+.wknd-system-logs .wknd-log-level-warn,
+.wknd-system-logs .wknd-log-level-warning { color: #784300; background: #fff0cd; }
+.wknd-system-logs .wknd-log-level-info { color: #16593d; background: #e0f3e8; }
+.wknd-system-logs .wknd-log-level-debug,
+.wknd-system-logs .wknd-log-level-trace { color: #455468; background: #eaf0f6; }
+
 
 [id$="-components-frame"] [id^="demo-preview-"] {
     box-sizing: border-box;
