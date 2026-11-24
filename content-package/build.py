@@ -15,6 +15,8 @@ ADVENTURES = "/content/wknd/us/en/adventures"
 SOURCE = f"{ADVENTURES}/bali-surf-camp"
 TARGET = f"{ADVENTURES}/bali-surf-camp-demo"
 SECTION_TARGET = f"{ADVENTURES.rsplit('/', 1)[0]}/aem-demo"
+SECTION_DETAIL = f"{SECTION_TARGET}/demo-components"
+SECTION_IMAGE = "/content/dam/wknd-demo-components.jpg"
 TEMPLATE_SOURCE = "/conf/wknd/settings/wcm/templates/adventure-page-template"
 TEMPLATE_TARGET = f"{TEMPLATE_SOURCE}-demo"
 POLICY_ROOT = "/conf/wknd/settings/wcm/policies"
@@ -27,6 +29,7 @@ FILTER = f"""<?xml version="1.0" encoding="UTF-8"?>
 <workspaceFilter version="1.0">
     <filter root="{TARGET}" mode="replace"/>
     <filter root="{SECTION_TARGET}" mode="replace"/>
+    <filter root="{SECTION_IMAGE}" mode="replace"/>
     <filter root="{TEMPLATE_TARGET}" mode="replace"/>
     <filter root="{POLICY_ROOT}/{DEMO_CONTAINER_POLICY}" mode="replace"/>
     <filter root="{WEATHER_COMPONENT}" mode="replace"/>
@@ -598,11 +601,61 @@ def add_demo_components(document: minidom.Document) -> None:
     body.insertBefore(weather_panel, first)
 
 
-def build_package(wknd_release: Path, output: Path, weather_source: Path) -> None:
+SECTION_IMAGE_DEFINITION = """<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0"
+    xmlns:dam="http://www.day.com/dam/1.0"
+    xmlns:dc="http://purl.org/dc/elements/1.1/"
+    jcr:primaryType="dam:Asset">
+    <jcr:content jcr:primaryType="dam:AssetContent" dam:assetState="processed">
+        <metadata jcr:primaryType="nt:unstructured" dc:format="image/jpeg"
+            dc:title="Illustration of a component library"/>
+        <renditions jcr:primaryType="nt:folder"/>
+    </jcr:content>
+</jcr:root>
+"""
+
+
+def build_section(landing_source: bytes) -> bytes:
+    with minidom.parseString(landing_source) as document:
+        root = document.documentElement
+        page = document.getElementsByTagName("jcr:content")[0]
+        for child in list(root.childNodes):
+            if child.nodeType == child.ELEMENT_NODE and child is not page:
+                root.removeChild(child)
+        for node in document.getElementsByTagName("*"):
+            for key in ("cq:lastRolledout", "cq:lastRolledoutBy", "jcr:mixinTypes"):
+                if node.hasAttribute(key):
+                    node.removeAttribute(key)
+
+        page.setAttribute("jcr:title", "AEM Demo")
+        page.setAttribute("navTitle", "AEM Demo")
+        page.setAttribute("hideInNav", "{Boolean}false")
+        page.setAttribute("jcr:description", "Explore the AEM component library.")
+        page.removeAttribute("cq:tags")
+
+        teaser = page.getElementsByTagName("teaser")[0]
+        teaser.setAttribute("jcr:title", "Explore AEM components")
+        teaser.setAttribute("jcr:description", "<p>See WKND and Core Components in action.</p>")
+        teaser.setAttribute("fileReference", SECTION_IMAGE)
+        teaser.setAttribute("alt", "Laptop displaying a library of website components")
+        teaser.setAttribute("altValueFromDAM", "{Boolean}false")
+        teaser.removeChild(teaser.getElementsByTagName("actions")[0])
+
+        titles = page.getElementsByTagName("title")
+        titles[1].setAttribute("jcr:title", "Component demos")
+        tabs = page.getElementsByTagName("tabs")[0]
+        for child in list(tabs.childNodes):
+            if child.nodeType == child.ELEMENT_NODE and child.getAttribute("cq:panelTitle") != "All":
+                tabs.removeChild(child)
+        return document.toxml(encoding="UTF-8")
+
+
+def build_package(wknd_release: Path, output: Path, weather_source: Path, section_image: Path) -> None:
     with ZipFile(wknd_release) as release:
         sample_bytes = release.read(SAMPLE_PACKAGE)
     with ZipFile(io.BytesIO(sample_bytes)) as sample:
         page = sample.read(f"jcr_root{SOURCE}/.content.xml").decode("utf-8")
+        landing_source = sample.read(f"jcr_root{ADVENTURES}/.content.xml")
         source_policies = sample.read(f"jcr_root{POLICY_ROOT}/.content.xml")
         template_prefix = f"jcr_root{TEMPLATE_SOURCE}/"
         template_files = {
@@ -675,10 +728,16 @@ def build_package(wknd_release: Path, output: Path, weather_source: Path) -> Non
         add_demo_components(document)
         page = document.toxml(encoding="UTF-8")
         section_content = document.getElementsByTagName("jcr:content")[0]
-        section_content.setAttribute("jcr:title", "AEM Demo")
-        section_content.setAttribute("navTitle", "AEM Demo")
-        section_content.setAttribute("hideInNav", "{Boolean}false")
-        section_page = document.toxml(encoding="UTF-8")
+        section_content.setAttribute("jcr:title", "Demo Components")
+        section_content.setAttribute("navTitle", "Demo Components")
+        section_content.setAttribute("jcr:description", "See WKND, Core Components and Weather in action.")
+        # WKND Image List uses the first Image component on the linked page.
+        image = section_content.getElementsByTagName("carousel")[0].getElementsByTagName("image")[0]
+        image.setAttribute("fileReference", SECTION_IMAGE)
+        image.setAttribute("alt", "Laptop displaying a library of website components")
+        image.setAttribute("altValueFromDAM", "{Boolean}false")
+        section_detail = document.toxml(encoding="UTF-8")
+    section_page = build_section(landing_source)
 
     output.parent.mkdir(parents=True, exist_ok=True)
     with ZipFile(output, "w", compression=ZIP_DEFLATED) as package:
@@ -686,6 +745,16 @@ def build_package(wknd_release: Path, output: Path, weather_source: Path) -> Non
         package.writestr("META-INF/vault/properties.xml", PROPERTIES)
         package.writestr(f"jcr_root{TARGET}/.content.xml", page)
         package.writestr(f"jcr_root{SECTION_TARGET}/.content.xml", section_page)
+        package.writestr(f"jcr_root{SECTION_DETAIL}/.content.xml", section_detail)
+        asset = f"jcr_root{SECTION_IMAGE}"
+        package.writestr(f"{asset}/.content.xml", SECTION_IMAGE_DEFINITION)
+        rendition = f"{asset}/_jcr_content/renditions/original"
+        package.write(section_image, rendition)
+        package.writestr(f"{rendition}.dir/.content.xml", """<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" jcr:primaryType="nt:file">
+    <jcr:content jcr:primaryType="nt:resource" jcr:mimeType="image/jpeg"/>
+</jcr:root>
+""")
         clientlib = f"jcr_root{DEMO_CLIENTLIB}"
         package.writestr(f"{clientlib}/.content.xml", DEMO_CLIENTLIB_DEFINITION)
         package.writestr(f"{clientlib}/css.txt", "demo-components.css\n")
@@ -707,5 +776,6 @@ if __name__ == "__main__":
     parser.add_argument("wknd_release", type=Path)
     parser.add_argument("output", type=Path)
     parser.add_argument("--weather-source", type=Path, default=Path("weather"))
+    parser.add_argument("--section-image", type=Path, default=Path("content-package/demo-components.jpg"))
     args = parser.parse_args()
-    build_package(args.wknd_release, args.output, args.weather_source)
+    build_package(args.wknd_release, args.output, args.weather_source, args.section_image)
