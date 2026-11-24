@@ -21,6 +21,8 @@
                     data.build.join("\n") || "No build events available.";
                 panel.querySelector("[data-system-logs-runtime]").textContent =
                     data.runtime.join("\n") || "No matching recent events.";
+                panel.querySelector("[data-system-logs-packages]").textContent =
+                    data.packageLogs.join("\n") || "No matching package or bundle entries in the recent AEM log.";
                 var list = panel.querySelector("[data-system-logs-status]");
                 list.textContent = "";
                 data.status.forEach(function (status) {
