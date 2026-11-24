@@ -7,6 +7,37 @@
             var results = panel.querySelector("[data-system-logs-results]");
             var refresh = panel.querySelector("[data-system-logs-refresh]");
 
+            function renderLogFiles(files) {
+                var list = panel.querySelector("[data-system-logs-files]");
+                list.textContent = "";
+                if (!files.length) list.textContent = "No log files available.";
+                files.forEach(function (path) {
+                    var details = document.createElement("details");
+                    var title = document.createElement("summary");
+                    var content = document.createElement("pre");
+                    var loading = false;
+                    title.textContent = path;
+                    content.tabIndex = 0;
+                    details.append(title, content);
+                    list.appendChild(details);
+                    details.addEventListener("toggle", function () {
+                        if (!details.open || loading) return;
+                        loading = true;
+                        content.textContent = "Loading log…";
+                        var url = new URL(panel.dataset.systemLogsUrl, document.baseURI);
+                        url.searchParams.set("log", path);
+                        fetch(url, { cache: "no-store" })
+                            .then(function (response) {
+                                if (!response.ok) throw new Error("Could not load this log.");
+                                return response.text();
+                            })
+                            .then(function (text) { content.textContent = text || "Empty log."; })
+                            .catch(function (error) { content.textContent = error.message; })
+                            .finally(function () { loading = false; });
+                    });
+                });
+            }
+
             function render(data) {
                 panel.querySelector("[data-system-logs-commit]").textContent =
                     data.commit ? "Deployed commit: " + data.commit : "";
@@ -30,6 +61,7 @@
                     item.textContent = status.name + " · " + status.state;
                     list.appendChild(item);
                 });
+                renderLogFiles(data.logFiles || []);
                 results.hidden = false;
                 message.textContent = "";
             }

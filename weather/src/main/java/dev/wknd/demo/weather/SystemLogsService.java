@@ -1,10 +1,17 @@
 package dev.wknd.demo.weather;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.LinkOption;
+import java.util.zip.GZIPInputStream;
+import java.util.stream.Stream;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -17,7 +24,9 @@ import org.osgi.service.component.annotations.Component;
 @Component(service = SystemLogsService.class)
 public final class SystemLogsService {
     private static final int MAX_BYTES = 512 * 1024;
-    private static final Path AEM_LOG = Path.of("/aem/crx-quickstart/logs/error.log");
+    private static final Path LOG_ROOT = Path.of(
+        System.getProperty("sling.home", "/aem/crx-quickstart"), "logs").toAbsolutePath().normalize();
+    private static final Path AEM_LOG = LOG_ROOT.resolve("error.log");
     private static final Path BUILD_LOG = Path.of("/opt/wknd-diagnostics/build.log");
     private static final List<String> PACKAGE_NAMES = List.of(
         "aem-guides-wknd", "wknd-demo-adventure", "dev.wknd.demo.weather");
@@ -39,7 +48,45 @@ public final class SystemLogsService {
                 status("Weather component definition", resolver, "/apps/wknd-demo/components/weather"),
                 new Status("Weather / System Logs bundle", bundle != null
                     && bundle.getState() == Bundle.ACTIVE ? "Active" : "Inactive")
-            ), buildEvents(tail(BUILD_LOG)), runtimeEvents(aemLines), recentAemLog(aemLines));
+            ), buildEvents(tail(BUILD_LOG)), runtimeEvents(aemLines), recentAemLog(aemLines), listLogs(LOG_ROOT));
+    }
+
+    static List<String> listLogs(Path root) {
+        try (Stream<Path> files = Files.walk(root)) {
+            return files.filter(path -> Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS))
+                .map(Path::toString).sorted().toList();
+        } catch (IOException | java.io.UncheckedIOException failure) {
+            return List.of();
+        }
+    }
+
+    BufferedReader openLog(String name) throws IOException {
+        return openLog(LOG_ROOT, name);
+    }
+
+    static BufferedReader openLog(Path root, String name) throws IOException {
+        if (!listLogs(root).contains(name)) {
+            throw new java.nio.file.NoSuchFileException(name);
+        }
+        Path path = Path.of(name);
+        if (!path.toRealPath().startsWith(root.toRealPath())) {
+            throw new java.nio.file.NoSuchFileException(name);
+        }
+        InputStream stream = Files.newInputStream(path, LinkOption.NOFOLLOW_LINKS);
+        try {
+            InputStream content = name.endsWith(".gz") ? new GZIPInputStream(stream) : stream;
+            return new BufferedReader(new InputStreamReader(content, StandardCharsets.UTF_8));
+        } catch (IOException failure) {
+            stream.close();
+            throw failure;
+        }
+    }
+
+    static void writeLog(BufferedReader reader, PrintWriter output) throws IOException {
+        String line;
+        while ((line = reader.readLine()) != null) {
+            output.println(redact(line));
+        }
     }
 
     private static Status status(String name, ResourceResolver resolver, String path) {
@@ -80,11 +127,13 @@ public final class SystemLogsService {
     }
 
     static List<String> recentAemLog(List<String> lines) {
-        return lines.stream().map(line -> {
-            String clean = line.replaceAll("[\\p{Cntrl}&&[^\\t]]", " ");
-            return SENSITIVE.matcher(clean).find()
-                ? "[Log entry withheld: potentially sensitive data]" : clean;
-        }).toList();
+        return lines.stream().map(SystemLogsService::redact).toList();
+    }
+
+    private static String redact(String line) {
+        String clean = line.replaceAll("[\\p{Cntrl}&&[^\\t]]", " ");
+        return SENSITIVE.matcher(clean).find()
+            ? "[Log entry withheld: potentially sensitive data]" : clean;
     }
 
     private static String summarize(String line) {
@@ -119,5 +168,6 @@ public final class SystemLogsService {
 
     record Status(String name, String state) {}
     record Snapshot(String commit, String renderService, List<Status> status,
-                    List<String> build, List<String> runtime, List<String> packageLogs) {}
+                    List<String> build, List<String> runtime, List<String> packageLogs,
+                    List<String> logFiles) {}
 }

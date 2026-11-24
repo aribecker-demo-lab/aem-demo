@@ -6,6 +6,10 @@ on:
         description: 'Full SHA of the last successfully installed revision'
         required: true
         default: '7a0850804e86c1673b339a0ce892a5c83c3fc55a'
+      replace_package:
+        description: 'Previous apps-only hot ZIP filename to uninstall first'
+        type: string
+        required: false
       install:
         description: 'Install and smoke test on the live Author instance'
         type: boolean
@@ -58,7 +62,7 @@ jobs:
           name: aem-hot-package
           path: output/
   install:
-    if: inputs.install && github.ref == 'refs/heads/main'
+    if: inputs.install
     needs: package
     runs-on: ubuntu-latest
     environment: aem-demo
@@ -73,10 +77,13 @@ jobs:
           path: output
       - name: Install through Package Manager and verify live bundle
         env:
+          REPLACE_PACKAGE: ${{ inputs.replace_package }}
           AEM_DEPLOY_USER: ${{ secrets.AEM_DEPLOY_USER }}
           AEM_DEPLOY_PASSWORD: ${{ secrets.AEM_DEPLOY_PASSWORD }}
         run: |
           set -euo pipefail
           version=$(cat output/version.txt)
-          python deploy/install_hot_package.py --package "output/wknd-demo-hot-$version.zip" \
+          replace_args=()
+          if [[ -n "$REPLACE_PACKAGE" ]]; then replace_args=(--replace-package "$REPLACE_PACKAGE"); fi
+          python deploy/install_hot_package.py "${replace_args[@]}" --package "output/wknd-demo-hot-$version.zip" \
             --guards output/guards.json --bundle-version "$version" | tee -a "$GITHUB_STEP_SUMMARY"

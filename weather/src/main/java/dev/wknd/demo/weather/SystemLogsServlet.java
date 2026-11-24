@@ -1,6 +1,8 @@
 package dev.wknd.demo.weather;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.nio.file.NoSuchFileException;
 import javax.servlet.Servlet;
 import javax.servlet.http.HttpServletResponse;
 
@@ -13,6 +15,7 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
 @Component(service = Servlet.class, property = {
+    "service.ranking:Integer=100",
     "sling.servlet.resourceTypes=wknd-demo/components/system-logs",
     "sling.servlet.selectors=diagnostics",
     "sling.servlet.extensions=json",
@@ -33,6 +36,17 @@ public final class SystemLogsServlet extends SlingSafeMethodsServlet {
         response.setHeader("Cache-Control", "no-store");
         if (!"admin".equals(request.getResourceResolver().getUserID())) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+        String path = request.getParameter("log");
+        if (path != null) {
+            try (BufferedReader reader = logs.openLog(path)) {
+                response.setHeader("X-Content-Type-Options", "nosniff");
+                response.setContentType("text/plain;charset=UTF-8");
+                SystemLogsService.writeLog(reader, response.getWriter());
+            } catch (NoSuchFileException failure) {
+                response.sendError(HttpServletResponse.SC_NOT_FOUND);
+            }
             return;
         }
         response.setContentType("application/json;charset=UTF-8");

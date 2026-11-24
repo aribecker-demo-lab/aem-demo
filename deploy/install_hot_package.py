@@ -2,6 +2,10 @@
 import argparse
 import base64
 import json
+import re
+from io import BytesIO
+from xml.etree import ElementTree
+from zipfile import ZipFile
 import os
 import time
 from pathlib import Path
@@ -11,6 +15,13 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 AUTHOR = "https://aem-demo-author.onrender.com"
 BASE = "/content/wknd/us/en/aem-demo"
+APP_FILTERS = {
+    "/apps/wknd-demo/components/weather",
+    "/apps/wknd-demo/components/system-logs",
+    "/apps/wknd/clientlibs/clientlib-demo-components",
+    "/apps/wknd-demo/install",
+}
+PACKAGE_SERVICE = "/crx/packmgr/service/.json"
 COMPONENT_ENDPOINT = BASE + "/weather/jcr:content/root/container/weather_panel/weather.current.json"
 
 
@@ -105,19 +116,46 @@ def smoke(bundle_version):
     raise RuntimeError("Smoke test did not observe the new bundle and the expected Weather and System Logs markup.")
 
 
+def package_command(path, command, token):
+    return form_request(PACKAGE_SERVICE + quote(path, safe="/"), {"cmd": command}, token)
+
+
+def verify_replacement_scope(path):
+    with ZipFile(BytesIO(request(path)[0])) as package:
+        filters = ElementTree.fromstring(package.read("META-INF/vault/filter.xml"))
+    roots = {item.attrib["root"] for item in filters.findall("filter")}
+    if not roots or not roots <= APP_FILTERS:
+        raise ValueError("The previous package includes content or configuration; review its uninstall separately.")
+
+
 def install(args):
     start = time.monotonic()
     if not all(os.environ.get(key) for key in ("AEM_DEPLOY_USER", "AEM_DEPLOY_PASSWORD")):
         raise ValueError("Configure the AEM deployment credentials in the GitHub environment.")
     token = json.loads(request("/libs/granite/csrf/token.json")[0])["token"]
     check_author_changes(json.loads(args.guards.read_text(encoding="utf-8")))
-    upload = form_request("/crx/packmgr/service/.json", {
-        "cmd": "upload", "package": args.package, "force": "false",
-    }, token)
-    package_path = upload.get("path", "")
-    if package_path != f"/etc/packages/wknd-demo/{args.package.name}":
-        raise ValueError("Unexpected package path returned by AEM.")
-    form_request("/crx/packmgr/service/.json" + quote(package_path, safe="/"), {"cmd": "install"}, token)
+    previous = None
+    if args.replace_package:
+        if (not re.fullmatch(r"wknd-demo-hot-[0-9][0-9A-Za-z._-]*\.zip", args.replace_package)
+                or args.replace_package == args.package.name):
+            raise ValueError("Specify a different, versioned WKND Demo Hot package filename.")
+        previous = f"/etc/packages/wknd-demo/{args.replace_package}"
+        verify_replacement_scope(previous)
+        package_command(previous, "uninstall", token)
+        print(f"Uninstalled {args.replace_package}.", flush=True)
+    try:
+        upload = form_request(PACKAGE_SERVICE, {
+            "cmd": "upload", "package": args.package, "force": "false",
+        }, token)
+        package_path = upload.get("path", "")
+        if package_path != f"/etc/packages/wknd-demo/{args.package.name}":
+            raise ValueError("Unexpected package path returned by AEM.")
+        package_command(package_path, "install", token)
+    except (ValueError, OSError, RuntimeError):
+        if previous:
+            package_command(previous, "install", token)
+            print(f"Restored {args.replace_package}.", flush=True)
+        raise
     print(f"Package Manager accepted the installation in {time.monotonic() - start:.1f}s.", flush=True)
     smoke(args.bundle_version)
     print(f"Weather, System Logs and exact OSGi bundle version verified in {time.monotonic() - start:.1f}s.")
@@ -128,6 +166,7 @@ if __name__ == "__main__":
     parser.add_argument("--package", type=Path, required=True)
     parser.add_argument("--guards", type=Path, required=True)
     parser.add_argument("--bundle-version", required=True)
+    parser.add_argument("--replace-package", help="Uninstall this previous apps-only hot package first.")
     try:
         install(parser.parse_args())
     except (ValueError, OSError, RuntimeError) as exc:

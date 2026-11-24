@@ -1,10 +1,39 @@
 package dev.wknd.demo.weather;
 
 import java.util.List;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 public class SystemLogsServiceTest {
+    @Rule public TemporaryFolder files = new TemporaryFolder();
+
+    @Test
+    public void listsNestedLogFilesAndReadsFullRedactedContent() throws Exception {
+        var root = files.newFolder("logs").toPath();
+        var log = Files.createDirectory(root.resolve("nested")).resolve("error.log");
+        Files.writeString(log, "first line\ntoken=sensitive\nlast line\n");
+        assertEquals(List.of(log.toString()), SystemLogsService.listLogs(root));
+        try (var reader = SystemLogsService.openLog(root, log.toString())) {
+            var body = new StringWriter();
+            SystemLogsService.writeLog(reader, new PrintWriter(body));
+            assertEquals("first line\n[Log entry withheld: potentially sensitive data]\nlast line\n",
+                body.toString());
+        }
+    }
+
+    @Test(expected = NoSuchFileException.class)
+    public void deniesPathsOutsideLogRoot() throws Exception {
+        var root = files.newFolder("logs").toPath();
+        var outside = files.newFile("outside.log").toPath();
+        SystemLogsService.openLog(root, outside.toString());
+    }
+
     @Test
     public void keepsBuildStepsAndOmitsArbitraryOutput() {
         assertEquals(List.of("BUILD DEMO: Generated FileVault content package", "[INFO] BUILD SUCCESS"),

@@ -15,6 +15,7 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
 @Component(service = Servlet.class, property = {
+    "service.ranking:Integer=100",
     "sling.servlet.resourceTypes=wknd-demo/components/weather",
     "sling.servlet.selectors=current",
     "sling.servlet.extensions=json",
