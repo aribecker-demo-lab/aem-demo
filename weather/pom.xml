@@ -10,6 +10,14 @@
   </properties>
   <dependencies>
     <dependency>
+      <groupId>org.osgi</groupId><artifactId>org.osgi.core</artifactId>
+      <version>6.0.0</version><scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId><artifactId>slf4j-api</artifactId>
+      <version>1.7.36</version><scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>org.apache.sling</groupId><artifactId>org.apache.sling.api</artifactId>
       <version>2.27.2</version><scope>provided</scope>
     </dependency>
@@ -50,7 +58,7 @@
           <instructions>
             <Bundle-SymbolicName>dev.wknd.demo.weather</Bundle-SymbolicName>
             <Private-Package>dev.wknd.demo.weather,com.google.gson,com.google.gson.*</Private-Package>
-            <Import-Package>sun.misc;resolution:=optional,*</Import-Package>
+            <Import-Package>sun.misc;resolution:=optional,org.slf4j;version="[1.7,3)",*</Import-Package>
             <_dsannotations>*</_dsannotations>
           </instructions>
         </configuration>

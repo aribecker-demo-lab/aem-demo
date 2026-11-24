@@ -1,0 +1,15 @@
+<section class="wknd-system-logs" data-system-logs-url="${resource.path}.diagnostics.json">
+    <h2>Deployment and AEM diagnostics</h2>
+    <p data-system-logs-message role="status">Loading diagnostics…</p>
+    <div data-system-logs-results hidden>
+        <p data-system-logs-commit></p>
+        <p><a data-system-logs-render>Full build and deployment history in Render</a></p>
+        <h3>Docker image build</h3>
+        <pre data-system-logs-build></pre>
+        <h3>AEM package and bundle status</h3>
+        <ul data-system-logs-status></ul>
+        <h3>Recent AEM and Weather events</h3>
+        <pre data-system-logs-runtime></pre>
+        <button type="button" data-system-logs-refresh>Refresh logs</button>
+    </div>
+</section>

@@ -8,13 +8,17 @@ import java.net.http.HttpResponse;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.UUID;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.osgi.service.component.annotations.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component(service = WeatherService.class)
 public final class WeatherService {
+    private static final Logger LOG = LoggerFactory.getLogger(WeatherService.class);
     private static final String LOCATION = "Bali, Indonesia";
     private static final String MET_URL =
         "https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=-8.65&lon=115.22";
@@ -28,6 +32,7 @@ public final class WeatherService {
     private final Provider primary;
     private final Provider backup;
     private Weather cachedWeather;
+    private String trace;
     private Instant refreshAfter = Instant.EPOCH;
 
     public WeatherService() {
@@ -44,30 +49,39 @@ public final class WeatherService {
 
     public synchronized Weather currentWeather() {
         if (clock.instant().isBefore(refreshAfter)) {
+            LOG.info("WKND_WEATHER CACHE_HIT trace={}", trace);
             return cachedWeather;
         }
-        cachedWeather = firstAvailable(primary, backup);
+        trace = UUID.randomUUID().toString();
+        LOG.info("WKND_WEATHER CACHE_MISS trace={}", trace);
+        cachedWeather = firstAvailable(primary, backup, trace);
         refreshAfter = clock.instant().plusSeconds(cachedWeather == null ? 30 : 300);
+        LOG.info("WKND_WEATHER CACHE_UPDATED trace={}", trace);
         return cachedWeather;
     }
 
-    private static Weather firstAvailable(Provider primary, Provider backup) {
-        Weather weather = tryProvider(primary);
+    private static Weather firstAvailable(Provider primary, Provider backup, String trace) {
+        Weather weather = tryProvider(primary, "PRIMARY", trace);
         if (weather == null && !Thread.currentThread().isInterrupted()) {
-            return tryProvider(backup);
+            return tryProvider(backup, "BACKUP", trace);
         }
         return weather;
     }
 
-    private static Weather tryProvider(Provider provider) {
+    private static Weather tryProvider(Provider provider, String name, String trace) {
+        long started = System.nanoTime();
+        Weather reading = null;
         try {
-            return provider.get();
+            reading = provider.get();
         } catch (InterruptedException failure) {
             Thread.currentThread().interrupt();
-            return null;
         } catch (IOException | RuntimeException failure) {
-            return null;
+            // Provider response bodies and exception details stay out of the diagnostic feed.
         }
+        LOG.info("WKND_WEATHER {} trace={} durationMs={}",
+            name + (reading == null ? "_FAILED" : "_SUCCESS"), trace,
+            (System.nanoTime() - started) / 1_000_000);
+        return reading;
     }
 
     private JsonObject fetch(String url) throws IOException, InterruptedException {

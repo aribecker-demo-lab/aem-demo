@@ -16,6 +16,8 @@ SOURCE = f"{ADVENTURES}/bali-surf-camp"
 TARGET = f"{ADVENTURES}/bali-surf-camp-demo"
 SECTION_TARGET = f"{ADVENTURES.rsplit('/', 1)[0]}/aem-demo"
 SECTION_IMAGE = "/content/dam/wknd-demo-components.jpg"
+LOGS_SLUG = "system-logs"
+LOGS_COMPONENT = "/apps/wknd-demo/components/system-logs"
 CATALOG_ASSETS = "/content/dam/wknd-demo-catalog"
 # slug, title, panel ID, description, image alt text, Pexels photo ID
 CATALOG_PAGES = (
@@ -48,6 +50,7 @@ FILTER = f"""<?xml version="1.0" encoding="UTF-8"?>
     <filter root="{CATALOG_ASSETS}" mode="replace"/>
     <filter root="{TEMPLATE_TARGET}" mode="replace"/>
     <filter root="{POLICY_ROOT}/{DEMO_CONTAINER_POLICY}" mode="replace"/>
+    <filter root="{LOGS_COMPONENT}" mode="replace"/>
     <filter root="{WEATHER_COMPONENT}" mode="replace"/>
     <filter root="{DEMO_CLIENTLIB}" mode="replace"/>
 </workspaceFilter>
@@ -106,6 +109,15 @@ DEMO_COMPONENTS_CSS = """[id$="-components-frame"] {
 
 .wknd-demo-weather__details dd { margin: 0; font-weight: 700; }
 .wknd-demo-weather__source { font-size: .875rem; }
+
+.wknd-system-logs pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    background: #f3f4f5;
+    padding: 1rem;
+    max-height: 28rem;
+    overflow: auto;
+}
 
 [id$="-components-frame"] [id^="demo-preview-"] {
     box-sizing: border-box;
@@ -670,6 +682,12 @@ def build_section(landing_source: bytes) -> bytes:
         for child in list(tabs.childNodes):
             if child.nodeType == child.ELEMENT_NODE and child.getAttribute("cq:panelTitle") != "All":
                 tabs.removeChild(child)
+        listing = next(child for child in tabs.childNodes if child.nodeType == child.ELEMENT_NODE)
+        listing.setAttribute("listFrom", "static")
+        listing.setAttribute("pages", "[" + ",".join(
+            f"{SECTION_TARGET}/{slug}" for slug in (LOGS_SLUG, *(item[0] for item in CATALOG_PAGES))
+        ) + "]")
+        listing.removeAttribute("orderBy")
         return document.toxml(encoding="UTF-8")
 
 
@@ -687,20 +705,25 @@ def build_catalog_page(page_source: bytes, item: tuple[str, ...]) -> bytes:
         body = root.getElementsByTagName("container")[0]
         body.setAttribute("id", "demo-catalog-detail")
         for child in list(body.childNodes):
-            if child.nodeType == child.ELEMENT_NODE and child.getAttribute("id") != panel_id:
+            if child.nodeType == child.ELEMENT_NODE and (not panel_id or child.getAttribute("id") != panel_id):
                 body.removeChild(child)
 
         cover = document.createElement("card_image")
         for key, value in {
             "jcr:primaryType": "nt:unstructured",
             "sling:resourceType": "wknd/components/image",
-            "fileReference": f"{CATALOG_ASSETS}/{slug}.jpg",
+            "fileReference": SECTION_IMAGE if slug == LOGS_SLUG else f"{CATALOG_ASSETS}/{slug}.jpg",
             "alt": alt,
             "altValueFromDAM": "{Boolean}false",
         }.items():
             cover.setAttribute(key, value)
         # Image List picks the first matching Image resource in path order.
         body.insertBefore(cover, body.firstChild)
+        if slug == LOGS_SLUG:
+            panel = document.createElement("system_logs")
+            panel.setAttribute("jcr:primaryType", "nt:unstructured")
+            panel.setAttribute("sling:resourceType", "wknd-demo/components/system-logs")
+            body.appendChild(panel)
         return document.toxml(encoding="UTF-8")
 
 
@@ -808,6 +831,10 @@ def build_package(
                          '<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" '
                          'xmlns:sling="http://sling.apache.org/jcr/sling/1.0" '
                          'jcr:primaryType="sling:Folder"/>')
+        logs_item = (LOGS_SLUG, "System Logs", "", "Docker build, AEM installation and Weather diagnostics.",
+                     "Laptop displaying a component library", "")
+        package.writestr(f"jcr_root{SECTION_TARGET}/{LOGS_SLUG}/.content.xml",
+                         build_catalog_page(page, logs_item))
         for item in CATALOG_PAGES:
             slug, title, _, _, _, photo_id = item
             package.writestr(f"jcr_root{SECTION_TARGET}/{slug}/.content.xml",
@@ -826,8 +853,12 @@ def build_package(
         package.writestr(
             f"jcr_root{POLICY_ROOT}/{DEMO_CONTAINER_POLICY}/.content.xml", demo_policy,
         )
-        package.writestr(f"{clientlib}/js.txt", "weather.js\n")
+        package.writestr(f"{clientlib}/js.txt", "weather.js\nsystem-logs.js\n")
         package.write(weather_source / "clientlib/weather.js", f"{clientlib}/weather.js")
+        package.write(weather_source / "clientlib/system-logs.js", f"{clientlib}/system-logs.js")
+        for name in (".content.xml", "system-logs.html"):
+            package.write(weather_source / "system-logs" / name,
+                          f"jcr_root{LOGS_COMPONENT}/{name}")
         for name in (".content.xml", "weather.html"):
             package.write(weather_source / "component" / name,
                           f"jcr_root{WEATHER_COMPONENT}/{name}")
