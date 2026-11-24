@@ -14,6 +14,7 @@ SAMPLE_PACKAGE = (
 ADVENTURES = "/content/wknd/us/en/adventures"
 SOURCE = f"{ADVENTURES}/bali-surf-camp"
 TARGET = f"{ADVENTURES}/bali-surf-camp-demo"
+SECTION_TARGET = f"{ADVENTURES.rsplit('/', 1)[0]}/aem-demo"
 TEMPLATE_SOURCE = "/conf/wknd/settings/wcm/templates/adventure-page-template"
 TEMPLATE_TARGET = f"{TEMPLATE_SOURCE}-demo"
 POLICY_ROOT = "/conf/wknd/settings/wcm/policies"
@@ -25,6 +26,7 @@ DEMO_CLIENTLIB = "/apps/wknd/clientlibs/clientlib-demo-components"
 FILTER = f"""<?xml version="1.0" encoding="UTF-8"?>
 <workspaceFilter version="1.0">
     <filter root="{TARGET}" mode="replace"/>
+    <filter root="{SECTION_TARGET}" mode="replace"/>
     <filter root="{TEMPLATE_TARGET}" mode="replace"/>
     <filter root="{POLICY_ROOT}/{DEMO_CONTAINER_POLICY}" mode="replace"/>
     <filter root="{WEATHER_COMPONENT}" mode="replace"/>
@@ -672,12 +674,18 @@ def build_package(wknd_release: Path, output: Path, weather_source: Path) -> Non
         tabs.insertBefore(demo_tab, bring_tab.nextSibling)
         add_demo_components(document)
         page = document.toxml(encoding="UTF-8")
+        section_content = document.getElementsByTagName("jcr:content")[0]
+        section_content.setAttribute("jcr:title", "AEM Demo")
+        section_content.setAttribute("navTitle", "AEM Demo")
+        section_content.setAttribute("hideInNav", "{Boolean}false")
+        section_page = document.toxml(encoding="UTF-8")
 
     output.parent.mkdir(parents=True, exist_ok=True)
     with ZipFile(output, "w", compression=ZIP_DEFLATED) as package:
         package.writestr("META-INF/vault/filter.xml", FILTER)
         package.writestr("META-INF/vault/properties.xml", PROPERTIES)
         package.writestr(f"jcr_root{TARGET}/.content.xml", page)
+        package.writestr(f"jcr_root{SECTION_TARGET}/.content.xml", section_page)
         clientlib = f"jcr_root{DEMO_CLIENTLIB}"
         package.writestr(f"{clientlib}/.content.xml", DEMO_CLIENTLIB_DEFINITION)
         package.writestr(f"{clientlib}/css.txt", "demo-components.css\n")
