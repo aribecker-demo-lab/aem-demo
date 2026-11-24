@@ -17,9 +17,12 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 import org.apache.sling.api.resource.ResourceResolver;
+import org.apache.sling.settings.SlingSettingsService;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkUtil;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
 
 @Component(service = SystemLogsService.class)
 public final class SystemLogsService {
@@ -38,6 +41,9 @@ public final class SystemLogsService {
     private static final String WKND = "/content/wknd/us/en";
     private static final String TEMPLATE = "/conf/wknd/settings/wcm/templates/adventure-page-template-demo";
 
+    @Reference(cardinality = ReferenceCardinality.OPTIONAL)
+    private SlingSettingsService slingSettings;
+
     Snapshot read(ResourceResolver resolver) {
         Bundle bundle = FrameworkUtil.getBundle(getClass());
         List<String> aemLines = tail(AEM_LOG);
@@ -50,7 +56,7 @@ public final class SystemLogsService {
                 new Status("Weather / System Logs bundle", bundle != null
                     && bundle.getState() == Bundle.ACTIVE ? "Active" : "Inactive")
             ), buildEvents(tail(BUILD_LOG)), runtimeEvents(Stream.concat(aemLines.stream(), tail(WEATHER_LOG).stream()).distinct().toList()),
-            recentAemLog(aemLines), listLogs(LOG_ROOT));
+            recentAemLog(aemLines), listLogs(LOG_ROOT), SystemSettings.read(slingSettings, bundle));
     }
 
     static List<String> listLogs(Path root) {
@@ -171,5 +177,5 @@ public final class SystemLogsService {
     record Status(String name, String state) {}
     record Snapshot(String commit, String renderService, List<Status> status,
                     List<String> build, List<String> runtime, List<String> packageLogs,
-                    List<String> logFiles) {}
+                    List<String> logFiles, List<SystemSettings.Group> systemSettings) {}
 }

@@ -38,6 +38,28 @@
                 });
             }
 
+            function renderSettings(groups) {
+                var settings = panel.querySelector("[data-system-settings]");
+                if (!settings) return;
+                settings.textContent = "";
+                groups.forEach(function (group) {
+                    var details = document.createElement("details");
+                    var title = document.createElement("summary");
+                    var values = document.createElement("dl");
+                    title.textContent = group.title;
+                    details.open = group.title === "AEM and Sling";
+                    group.values.forEach(function (value) {
+                        var label = document.createElement("dt");
+                        var entry = document.createElement("dd");
+                        label.textContent = value.name;
+                        entry.textContent = value.value;
+                        values.append(label, entry);
+                    });
+                    details.append(title, values);
+                    settings.appendChild(details);
+                });
+            }
+
             function render(data) {
                 panel.querySelector("[data-system-logs-commit]").textContent =
                     data.commit ? "Deployed commit: " + data.commit : "";
@@ -62,6 +84,7 @@
                     list.appendChild(item);
                 });
                 renderLogFiles(data.logFiles || []);
+                renderSettings(data.systemSettings || []);
                 results.hidden = false;
                 message.textContent = "";
             }

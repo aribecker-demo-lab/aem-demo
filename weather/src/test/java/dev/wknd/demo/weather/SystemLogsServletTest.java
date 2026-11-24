@@ -38,5 +38,6 @@ public class SystemLogsServletTest {
         verify(response).setHeader("Cache-Control", "no-store");
         assertTrue(body.toString().contains("\"status\""));
         assertTrue(body.toString().contains("\"runtime\""));
+        assertTrue(body.toString().contains("\"systemSettings\""));
     }
 }

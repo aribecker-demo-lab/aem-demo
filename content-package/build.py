@@ -834,7 +834,7 @@ def build_package(
                          '<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" '
                          'xmlns:sling="http://sling.apache.org/jcr/sling/1.0" '
                          'jcr:primaryType="sling:Folder"/>')
-        logs_item = (LOGS_SLUG, "System Logs", "", "Docker build, AEM installation and Weather diagnostics.",
+        logs_item = (LOGS_SLUG, "System Logs and Settings", "", "Docker build, AEM installation and Weather diagnostics.",
                      "Laptop displaying a component library", "")
         package.writestr(f"jcr_root{SECTION_TARGET}/{LOGS_SLUG}/.content.xml",
                          build_catalog_page(page, logs_item))
