@@ -1,0 +1,82 @@
+name: Fast Deploy AEM
+on:
+  workflow_dispatch:
+    inputs:
+      baseline:
+        description: 'Full SHA of the last successfully installed revision'
+        required: true
+        default: '7a0850804e86c1673b339a0ce892a5c83c3fc55a'
+      install:
+        description: 'Install and smoke test on the live Author instance'
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: aem-demo-author-deployment
+  cancel-in-progress: false
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          cache-dependency-path: weather/pom.xml
+      - name: Run tests and build the scoped package
+        env:
+          BASELINE: ${{ inputs.baseline }}
+        run: |
+          set -euo pipefail
+          start=$SECONDS
+          [[ "$BASELINE" =~ ^[0-9a-f]{40}$ ]]
+          git merge-base --is-ancestor "$BASELINE" HEAD
+          git worktree add --detach baseline "$BASELINE"
+          mkdir -p output
+          version="1.0.1.$(date -u +%Y%m%d%H%M%S)"
+          printf '%s' "$version" > output/version.txt
+          curl --fail --silent --show-error --location --retry 2 \
+            'https://github.com/adobe/aem-guides-wknd/releases/download/aem-guides-wknd-4.0.4/aem-guides-wknd.all-4.0.4.zip' \
+            -o wknd.zip
+          echo '93d915fe3cbdc33b612406f1919610e8aa3fc6ffd06e25136caf49a3dec26592  wknd.zip' | sha256sum --check
+          python content-package/build.py wknd.zip current.zip
+          (cd baseline && python content-package/build.py ../wknd.zip ../baseline.zip)
+          mvn --batch-mode --no-transfer-progress -f weather/pom.xml -Dweather.bundle.version="$version" package
+          python deploy/build_hot_package.py --baseline baseline.zip --current current.zip \
+            --bundle weather/target/weather-1.0.0.jar --version "$version" \
+            --output "output/wknd-demo-hot-$version.zip" --guards output/guards.json
+          printf 'Fast Deploy build: %s seconds.\n' "$((SECONDS - start))" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aem-hot-package
+          path: output/
+  install:
+    if: inputs.install && github.ref == 'refs/heads/main'
+    needs: package
+    runs-on: ubuntu-latest
+    environment: aem-demo
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: aem-hot-package
+          path: output
+      - name: Install through Package Manager and verify live bundle
+        env:
+          AEM_DEPLOY_USER: ${{ secrets.AEM_DEPLOY_USER }}
+          AEM_DEPLOY_PASSWORD: ${{ secrets.AEM_DEPLOY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          version=$(cat output/version.txt)
+          python deploy/install_hot_package.py --package "output/wknd-demo-hot-$version.zip" \
+            --guards output/guards.json --bundle-version "$version" | tee -a "$GITHUB_STEP_SUMMARY"

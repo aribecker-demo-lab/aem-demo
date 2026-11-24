@@ -8,6 +8,8 @@ import com.google.gson.Gson;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.FrameworkUtil;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -32,6 +34,10 @@ public final class WeatherServlet extends SlingSafeMethodsServlet {
             throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         response.setHeader("Cache-Control", "no-store");
+        Bundle bundle = FrameworkUtil.getBundle(WeatherServlet.class);
+        if (bundle != null) {
+            response.setHeader("X-WKND-Weather-Bundle", bundle.getVersion().toString());
+        }
         Weather current = weatherService.currentWeather();
         if (current == null) {
             response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);

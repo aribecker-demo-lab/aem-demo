@@ -1,0 +1,27 @@
+name: Full Deploy AEM
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: aem-demo-author-deployment
+  cancel-in-progress: false
+jobs:
+  trigger:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: aem-demo-full
+    steps:
+      - name: Request Docker rebuild of main in Render
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: |
+          set -euo pipefail
+          : "${RENDER_DEPLOY_HOOK:?Configure the existing Render service Deploy Hook secret}"
+          case "$RENDER_DEPLOY_HOOK" in
+            https://api.render.com/deploy/srv-dc1oho59fdbs73be0n6g\?key=*) ;;
+            *) echo "Deploy Hook does not match the existing service."; exit 1 ;;
+          esac
+          printf 'url = "%s"\n' "$RENDER_DEPLOY_HOOK" |
+            curl --config - --fail --silent --show-error --max-time 30 --output /dev/null
+          echo 'Render accepted the rebuild request. Follow the deployment in Render.' >> "$GITHUB_STEP_SUMMARY"
