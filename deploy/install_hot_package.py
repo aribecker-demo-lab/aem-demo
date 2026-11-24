@@ -93,14 +93,16 @@ def smoke(bundle_version):
             _, headers = request(COMPONENT_ENDPOINT)
             if headers.get("X-WKND-Weather-Bundle") == bundle_version:
                 html, _ = request(BASE + "/weather.html?wcmmode=disabled")
-                if b'data-weather-component="wknd-demo"' in html:
+                logs, _ = request(BASE + "/system-logs.html?wcmmode=disabled")
+                if (b'data-weather-component="wknd-demo"' in html
+                        and b"Recent entries from AEM error.log" in logs):
                     return
         except HTTPError as exc:
             if exc.code in (401, 403):
                 raise
         if attempt < 23:
             time.sleep(5)
-    raise RuntimeError("Smoke test did not observe both the new bundle and the Weather component marker.")
+    raise RuntimeError("Smoke test did not observe the new bundle and the expected Weather and System Logs markup.")
 
 
 def install(args):
@@ -118,7 +120,7 @@ def install(args):
     form_request("/crx/packmgr/service/.json" + quote(package_path, safe="/"), {"cmd": "install"}, token)
     print(f"Package Manager accepted the installation in {time.monotonic() - start:.1f}s.", flush=True)
     smoke(args.bundle_version)
-    print(f"Weather page and exact OSGi bundle version verified in {time.monotonic() - start:.1f}s.")
+    print(f"Weather, System Logs and exact OSGi bundle version verified in {time.monotonic() - start:.1f}s.")
 
 
 if __name__ == "__main__":

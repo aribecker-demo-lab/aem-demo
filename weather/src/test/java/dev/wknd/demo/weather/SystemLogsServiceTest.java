@@ -27,17 +27,17 @@ public class SystemLogsServiceTest {
             "dev.wknd.demo.weather.WeatherService " + event + " unexpected payload")));
     }
     @Test
-    public void showsOnlyRelevantPackageAndBundleLogMessages() {
+    public void keepsUnrelatedMessagesAndStackFramesInOrder() {
         String packageLine = "24.11.2026 22:00:00.001 *INFO* Installing aem-guides-wknd";
         String bundleLine = "24.11.2026 22:00:00.003 *WARN* Could not resolve dev.wknd.demo.weather bundle";
-        assertEquals(List.of(packageLine, bundleLine), SystemLogsService.packageEvents(List.of(
-            packageLine, "Installing an unrelated bundle",
-            "dev.wknd.demo.weather.WeatherService WKND_WEATHER CACHE_HIT", bundleLine)));
+        List<String> lines = List.of(packageLine, "Installing an unrelated bundle", bundleLine,
+            "\tat org.apache.felix.Framework.start(Framework.java:42)");
+        assertEquals(lines, SystemLogsService.recentAemLog(lines));
     }
 
     @Test
     public void withholdsEntriesThatContainSensitiveFields() {
         assertEquals(List.of("[Log entry withheld: potentially sensitive data]"),
-            SystemLogsService.packageEvents(List.of("Installing wknd-demo-adventure token=secret-value")));
+            SystemLogsService.recentAemLog(List.of("Installing wknd-demo-adventure token=secret-value")));
     }
 }
