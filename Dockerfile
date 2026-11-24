@@ -10,6 +10,7 @@ FROM python:3.12-slim AS content-package
 ADD --chmod=0644 --checksum=sha256:93d915fe3cbdc33b612406f1919610e8aa3fc6ffd06e25136caf49a3dec26592 https://github.com/adobe/aem-guides-wknd/releases/download/aem-guides-wknd-4.0.4/aem-guides-wknd.all-4.0.4.zip /tmp/aem-guides-wknd.all-4.0.4.zip
 COPY content-package/build.py /tmp/build.py
 COPY content-package/demo-components.jpg /tmp/demo-components.jpg
+COPY content-package/catalog-images /tmp/catalog-images
 COPY weather/component /tmp/weather/component
 COPY weather/clientlib /tmp/weather/clientlib
 RUN python /tmp/build.py /tmp/aem-guides-wknd.all-4.0.4.zip /tmp/wknd-demo-adventure-1.0.0.zip --weather-source /tmp/weather --section-image /tmp/demo-components.jpg

@@ -23,7 +23,7 @@
             widget.querySelector("[data-weather-result]").hidden = false;
             status.textContent = "";
             status.hidden = true;
-        } catch {
+        } catch (error) {
             status.textContent = "Current weather is temporarily unavailable.";
         }
     }

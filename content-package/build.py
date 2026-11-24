@@ -15,8 +15,23 @@ ADVENTURES = "/content/wknd/us/en/adventures"
 SOURCE = f"{ADVENTURES}/bali-surf-camp"
 TARGET = f"{ADVENTURES}/bali-surf-camp-demo"
 SECTION_TARGET = f"{ADVENTURES.rsplit('/', 1)[0]}/aem-demo"
-SECTION_DETAIL = f"{SECTION_TARGET}/demo-components"
 SECTION_IMAGE = "/content/dam/wknd-demo-components.jpg"
+CATALOG_ASSETS = "/content/dam/wknd-demo-catalog"
+# slug, title, panel ID, description, image alt text, Pexels photo ID
+CATALOG_PAGES = (
+    ("core-v2", "Core Components v2", "core-v2-components-frame",
+     "Explore the version 2 Core Components installed in this AEM SDK.",
+     "Laptop with code on the screen", "1181671"),
+    ("core-v3", "Core Components v3", "core-v3-components-frame",
+     "Explore the version 3 Core Components installed in this AEM SDK.",
+     "Close-up of a screen showing programming code", "34803966"),
+    ("wknd-components", "WKND Components", "demo-components-frame",
+     "Explore the WKND proxies and custom components.",
+     "Web design materials on a desk", "196644"),
+    ("weather", "Weather", "weather-components-frame",
+     "Check current temperature, humidity and wind in Bali.",
+     "Clouds across the sky", "531756"),
+)
 TEMPLATE_SOURCE = "/conf/wknd/settings/wcm/templates/adventure-page-template"
 TEMPLATE_TARGET = f"{TEMPLATE_SOURCE}-demo"
 POLICY_ROOT = "/conf/wknd/settings/wcm/policies"
@@ -30,6 +45,7 @@ FILTER = f"""<?xml version="1.0" encoding="UTF-8"?>
     <filter root="{TARGET}" mode="replace"/>
     <filter root="{SECTION_TARGET}" mode="replace"/>
     <filter root="{SECTION_IMAGE}" mode="replace"/>
+    <filter root="{CATALOG_ASSETS}" mode="replace"/>
     <filter root="{TEMPLATE_TARGET}" mode="replace"/>
     <filter root="{POLICY_ROOT}/{DEMO_CONTAINER_POLICY}" mode="replace"/>
     <filter root="{WEATHER_COMPONENT}" mode="replace"/>
@@ -65,6 +81,13 @@ DEMO_COMPONENTS_CSS = """[id$="-components-frame"] {
 #core-v2-components-frame { border-color: #7625a5; }
 #core-v3-components-frame { border-color: #1555a3; }
 #weather-components-frame { border-color: #db6714; }
+
+#demo-catalog-detail [id$="-components-frame"],
+#demo-catalog-detail [id^="demo-preview-"] {
+    border: 0;
+    padding: 0;
+}
+
 
 .wknd-demo-weather__temperature {
     color: #98420a;
@@ -650,7 +673,52 @@ def build_section(landing_source: bytes) -> bytes:
         return document.toxml(encoding="UTF-8")
 
 
-def build_package(wknd_release: Path, output: Path, weather_source: Path, section_image: Path) -> None:
+def build_catalog_page(page_source: bytes, item: tuple[str, ...]) -> bytes:
+    slug, title, panel_id, description, alt, _ = item
+    with minidom.parseString(page_source) as document:
+        content = document.getElementsByTagName("jcr:content")[0]
+        content.setAttribute("jcr:title", title)
+        content.setAttribute("navTitle", title)
+        content.setAttribute("jcr:description", description)
+        content.setAttribute("hideInNav", "{Boolean}false")
+        content.removeAttribute("cq:tags")
+
+        root = content.getElementsByTagName("root")[0]
+        body = root.getElementsByTagName("container")[0]
+        body.setAttribute("id", "demo-catalog-detail")
+        for child in list(body.childNodes):
+            if child.nodeType == child.ELEMENT_NODE and child.getAttribute("id") != panel_id:
+                body.removeChild(child)
+
+        cover = document.createElement("card_image")
+        for key, value in {
+            "jcr:primaryType": "nt:unstructured",
+            "sling:resourceType": "wknd/components/image",
+            "fileReference": f"{CATALOG_ASSETS}/{slug}.jpg",
+            "alt": alt,
+            "altValueFromDAM": "{Boolean}false",
+        }.items():
+            cover.setAttribute(key, value)
+        # Image List picks the first matching Image resource in path order.
+        body.insertBefore(cover, body.firstChild)
+        return document.toxml(encoding="UTF-8")
+
+
+def write_jpeg_asset(package: ZipFile, asset_path: str, image: Path, definition: str) -> None:
+    asset = f"jcr_root{asset_path}"
+    package.writestr(f"{asset}/.content.xml", definition)
+    rendition = f"{asset}/_jcr_content/renditions/original"
+    package.write(image, rendition)
+    package.writestr(f"{rendition}.dir/.content.xml", """<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" jcr:primaryType="nt:file">
+    <jcr:content jcr:primaryType="nt:resource" jcr:mimeType="image/jpeg"/>
+</jcr:root>
+""")
+
+
+def build_package(
+    wknd_release: Path, output: Path, weather_source: Path, section_image: Path,
+) -> None:
     with ZipFile(wknd_release) as release:
         sample_bytes = release.read(SAMPLE_PACKAGE)
     with ZipFile(io.BytesIO(sample_bytes)) as sample:
@@ -727,16 +795,6 @@ def build_package(wknd_release: Path, output: Path, weather_source: Path, sectio
         tabs.insertBefore(demo_tab, bring_tab.nextSibling)
         add_demo_components(document)
         page = document.toxml(encoding="UTF-8")
-        section_content = document.getElementsByTagName("jcr:content")[0]
-        section_content.setAttribute("jcr:title", "Demo Components")
-        section_content.setAttribute("navTitle", "Demo Components")
-        section_content.setAttribute("jcr:description", "See WKND, Core Components and Weather in action.")
-        # WKND Image List uses the first Image component on the linked page.
-        image = section_content.getElementsByTagName("carousel")[0].getElementsByTagName("image")[0]
-        image.setAttribute("fileReference", SECTION_IMAGE)
-        image.setAttribute("alt", "Laptop displaying a library of website components")
-        image.setAttribute("altValueFromDAM", "{Boolean}false")
-        section_detail = document.toxml(encoding="UTF-8")
     section_page = build_section(landing_source)
 
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -745,16 +803,22 @@ def build_package(wknd_release: Path, output: Path, weather_source: Path, sectio
         package.writestr("META-INF/vault/properties.xml", PROPERTIES)
         package.writestr(f"jcr_root{TARGET}/.content.xml", page)
         package.writestr(f"jcr_root{SECTION_TARGET}/.content.xml", section_page)
-        package.writestr(f"jcr_root{SECTION_DETAIL}/.content.xml", section_detail)
-        asset = f"jcr_root{SECTION_IMAGE}"
-        package.writestr(f"{asset}/.content.xml", SECTION_IMAGE_DEFINITION)
-        rendition = f"{asset}/_jcr_content/renditions/original"
-        package.write(section_image, rendition)
-        package.writestr(f"{rendition}.dir/.content.xml", """<?xml version="1.0" encoding="UTF-8"?>
-<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" jcr:primaryType="nt:file">
-    <jcr:content jcr:primaryType="nt:resource" jcr:mimeType="image/jpeg"/>
-</jcr:root>
-""")
+        write_jpeg_asset(package, SECTION_IMAGE, section_image, SECTION_IMAGE_DEFINITION)
+        package.writestr(f"jcr_root{CATALOG_ASSETS}/.content.xml",
+                         '<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" '
+                         'xmlns:sling="http://sling.apache.org/jcr/sling/1.0" '
+                         'jcr:primaryType="sling:Folder"/>')
+        for item in CATALOG_PAGES:
+            slug, title, _, _, _, photo_id = item
+            package.writestr(f"jcr_root{SECTION_TARGET}/{slug}/.content.xml",
+                             build_catalog_page(page, item))
+            asset_definition = SECTION_IMAGE_DEFINITION.replace(
+                'dc:title="Illustration of a component library"',
+                f'dc:title="{escape(title)}" dc:source="https://www.pexels.com/photo/{photo_id}/"',
+            )
+            write_jpeg_asset(package, f"{CATALOG_ASSETS}/{slug}.jpg",
+                             section_image.parent / "catalog-images" / f"{slug}.jpg",
+                             asset_definition)
         clientlib = f"jcr_root{DEMO_CLIENTLIB}"
         package.writestr(f"{clientlib}/.content.xml", DEMO_CLIENTLIB_DEFINITION)
         package.writestr(f"{clientlib}/css.txt", "demo-components.css\n")
