@@ -69,7 +69,10 @@ def content_delta(previous, current, root, out, guards):
         if "jcr:primaryType" in changes:
             raise ValueError(f"Node type change requires a reviewed migration: {root}")
         guards.append({"path": root, "properties": {name: before.get(name) for name in changes}})
-        out[root] = ("update_properties", xml_node(current, changes))
+        # AEM's DocView importer requires the existing node type even for updates.
+        out[root] = ("update_properties", xml_node(current, {
+            "jcr:primaryType": after["jcr:primaryType"], **changes,
+        }))
     old, new = element_children(previous), element_children(current)
     if old.keys() - new.keys():
         raise ValueError(f"Node removal requires a reviewed migration: {root}")
