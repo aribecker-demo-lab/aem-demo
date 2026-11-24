@@ -1,6 +1,7 @@
 """Build the FileVault content package from the pinned WKND release."""
 import argparse
 import io
+import json
 import re
 from html import escape
 from pathlib import Path
@@ -40,6 +41,7 @@ POLICY_ROOT = "/conf/wknd/settings/wcm/policies"
 ORIGINAL_CONTAINER_POLICY = "wknd/components/container/policy_213106331986985"
 DEMO_CONTAINER_POLICY = "wknd/components/container/adventure-demo"
 WEATHER_COMPONENT = "/apps/wknd-demo/components/weather"
+WEATHER_LOG_CONFIG = "/apps/wknd-demo/config/org.apache.sling.commons.log.LogManager.factory.config~wknd-weather.cfg.json"
 DEMO_CLIENTLIB = "/apps/wknd/clientlibs/clientlib-demo-components"
 
 FILTER = f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -52,6 +54,7 @@ FILTER = f"""<?xml version="1.0" encoding="UTF-8"?>
     <filter root="{POLICY_ROOT}/{DEMO_CONTAINER_POLICY}" mode="replace"/>
     <filter root="{LOGS_COMPONENT}" mode="replace"/>
     <filter root="{WEATHER_COMPONENT}" mode="replace"/>
+    <filter root="{WEATHER_LOG_CONFIG}" mode="replace"/>
     <filter root="{DEMO_CLIENTLIB}" mode="replace"/>
 </workspaceFilter>
 """
@@ -862,6 +865,12 @@ def build_package(
         for name in (".content.xml", "weather.html"):
             package.write(weather_source / "component" / name,
                           f"jcr_root{WEATHER_COMPONENT}/{name}")
+        package.writestr(f"jcr_root{WEATHER_LOG_CONFIG}", json.dumps({
+            "org.apache.sling.commons.log.names": ["dev.wknd.demo.weather.WeatherService"],
+            "org.apache.sling.commons.log.level": "info",
+            "org.apache.sling.commons.log.file": "logs/wknd-weather.log",
+            "org.apache.sling.commons.log.additiv": True,
+        }))
         for name, data in template_files.items():
             package.writestr(f"jcr_root{TEMPLATE_TARGET}/{name}", data)
 

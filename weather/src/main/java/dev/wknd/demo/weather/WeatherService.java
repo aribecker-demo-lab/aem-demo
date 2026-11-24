@@ -48,21 +48,28 @@ public final class WeatherService {
     }
 
     public synchronized Weather currentWeather() {
-        if (clock.instant().isBefore(refreshAfter)) {
+        Instant now = clock.instant();
+        if (now.isBefore(refreshAfter)) {
             LOG.info("WKND_WEATHER CACHE_HIT trace={}", trace);
+            LOG.info("WKND_WEATHER CACHE_STATE trace={} available={} remainingMs={}",
+                trace, cachedWeather != null, Duration.between(now, refreshAfter).toMillis());
             return cachedWeather;
         }
         trace = UUID.randomUUID().toString();
         LOG.info("WKND_WEATHER CACHE_MISS trace={}", trace);
+        LOG.info("WKND_WEATHER REFRESH_START trace={} location={} checkedAt={}", trace, LOCATION, now);
         cachedWeather = firstAvailable(primary, backup, trace);
         refreshAfter = clock.instant().plusSeconds(cachedWeather == null ? 30 : 300);
         LOG.info("WKND_WEATHER CACHE_UPDATED trace={}", trace);
+        LOG.info("WKND_WEATHER REFRESH_RESULT trace={} available={} nextRefreshAt={}",
+            trace, cachedWeather != null, refreshAfter);
         return cachedWeather;
     }
 
     private static Weather firstAvailable(Provider primary, Provider backup, String trace) {
         Weather weather = tryProvider(primary, "PRIMARY", trace);
         if (weather == null && !Thread.currentThread().isInterrupted()) {
+            LOG.info("WKND_WEATHER FALLBACK trace={} reason=primary_unavailable", trace);
             return tryProvider(backup, "BACKUP", trace);
         }
         return weather;
@@ -71,34 +78,49 @@ public final class WeatherService {
     private static Weather tryProvider(Provider provider, String name, String trace) {
         long started = System.nanoTime();
         Weather reading = null;
+        LOG.info("WKND_WEATHER PROVIDER_START trace={} role={}", trace, name);
         try {
             reading = provider.get();
         } catch (InterruptedException failure) {
             Thread.currentThread().interrupt();
+            LOG.info("WKND_WEATHER PROVIDER_ERROR trace={} role={} type=InterruptedException", trace, name);
         } catch (IOException | RuntimeException failure) {
-            // Provider response bodies and exception details stay out of the diagnostic feed.
+            LOG.info("WKND_WEATHER PROVIDER_ERROR trace={} role={} type={}",
+                trace, name, failure.getClass().getSimpleName());
         }
         LOG.info("WKND_WEATHER {} trace={} durationMs={}",
             name + (reading == null ? "_FAILED" : "_SUCCESS"), trace,
             (System.nanoTime() - started) / 1_000_000);
+        if (reading != null) {
+            LOG.info("WKND_WEATHER READING trace={} role={} temperatureC={} humidityPct={} windKmh={}",
+                trace, name, reading.temperature(), reading.humidity(), reading.wind());
+        }
         return reading;
     }
 
-    private JsonObject fetch(String url) throws IOException, InterruptedException {
+    private JsonObject fetch(String provider, String url) throws IOException, InterruptedException {
         HttpRequest request = HttpRequest.newBuilder(URI.create(url))
             .timeout(TIMEOUT)
             .header("Accept", "application/json")
             .header("User-Agent", "WKND-Weather-Demo/1.0 https://github.com/aribecker-demo-lab/aem-demo")
             .build();
+        LOG.info("WKND_WEATHER HTTP_START trace={} provider={} method=GET url={} timeoutMs={}",
+            trace, provider, url, TIMEOUT.toMillis());
+        long started = System.nanoTime();
         HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+        LOG.info("WKND_WEATHER HTTP_RESULT trace={} provider={} status={} durationMs={} responseChars={}",
+            trace, provider, response.statusCode(),
+            (System.nanoTime() - started) / 1_000_000, response.body().length());
         if (response.statusCode() != 200) {
             throw new IOException("Weather provider returned HTTP " + response.statusCode());
         }
-        return JsonParser.parseString(response.body()).getAsJsonObject();
+        JsonObject payload = JsonParser.parseString(response.body()).getAsJsonObject();
+        LOG.info("WKND_WEATHER JSON_PARSED trace={} provider={}", trace, provider);
+        return payload;
     }
 
     private Weather metNorway() throws IOException, InterruptedException {
-        JsonObject forecast = fetch(MET_URL).getAsJsonObject("properties")
+        JsonObject forecast = fetch("MET_NORWAY", MET_URL).getAsJsonObject("properties")
             .getAsJsonArray("timeseries").get(0).getAsJsonObject();
         JsonObject data = forecast.getAsJsonObject("data");
         JsonObject details = data.getAsJsonObject("instant").getAsJsonObject("details");
@@ -112,7 +134,7 @@ public final class WeatherService {
     }
 
     private Weather openMeteo() throws IOException, InterruptedException {
-        JsonObject current = fetch(OPEN_METEO_URL).getAsJsonObject("current");
+        JsonObject current = fetch("OPEN_METEO", OPEN_METEO_URL).getAsJsonObject("current");
         int code = current.get("weather_code").getAsInt();
         String condition = switch (code) {
             case 0 -> "clear sky";

@@ -10,6 +10,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 JCR = "http://www.jcp.org/jcr/1.0"
 APP_ROOTS = (
+    "/apps/wknd-demo/config/org.apache.sling.commons.log.LogManager.factory.config~wknd-weather.cfg.json",
     "/apps/wknd-demo/components/weather",
     "/apps/wknd-demo/components/system-logs",
     "/apps/wknd/clientlibs/clientlib-demo-components",

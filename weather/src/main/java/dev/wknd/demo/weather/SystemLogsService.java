@@ -27,6 +27,7 @@ public final class SystemLogsService {
     private static final Path LOG_ROOT = Path.of(
         System.getProperty("sling.home", "/aem/crx-quickstart"), "logs").toAbsolutePath().normalize();
     private static final Path AEM_LOG = LOG_ROOT.resolve("error.log");
+    private static final Path WEATHER_LOG = LOG_ROOT.resolve("wknd-weather.log");
     private static final Path BUILD_LOG = Path.of("/opt/wknd-diagnostics/build.log");
     private static final List<String> PACKAGE_NAMES = List.of(
         "aem-guides-wknd", "wknd-demo-adventure", "dev.wknd.demo.weather");
@@ -48,7 +49,8 @@ public final class SystemLogsService {
                 status("Weather component definition", resolver, "/apps/wknd-demo/components/weather"),
                 new Status("Weather / System Logs bundle", bundle != null
                     && bundle.getState() == Bundle.ACTIVE ? "Active" : "Inactive")
-            ), buildEvents(tail(BUILD_LOG)), runtimeEvents(aemLines), recentAemLog(aemLines), listLogs(LOG_ROOT));
+            ), buildEvents(tail(BUILD_LOG)), runtimeEvents(Stream.concat(aemLines.stream(), tail(WEATHER_LOG).stream()).distinct().toList()),
+            recentAemLog(aemLines), listLogs(LOG_ROOT));
     }
 
     static List<String> listLogs(Path root) {
