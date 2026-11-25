@@ -53,7 +53,7 @@
                 h("div", { className: "wknd-react-list-table" },
                     h("table", { "aria-label": stable ? "Stable ID keys" : "Array index keys" },
                         h("thead", null, h("tr", null,
-                            ["Array index", "React key", "Item text", "Row state"].map(label =>
+                            ["Array index", "React key", "Item text", "Row state (useState)"].map(label =>
                                 h("th", { key: label, scope: "col" }, label)))),
                         h("tbody", { key: revision }, items.map((item, index) => {
                             const reactKey = stable ? item.id : index;
