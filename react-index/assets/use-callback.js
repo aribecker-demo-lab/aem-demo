@@ -35,23 +35,31 @@
                 h("span", { ref: renders, className: "wknd-callback__renders" })));
     });
 
-    function Comparison() {
-        const [count, setCount] = useState(0);
-        const withoutHook = () => setCount(value => value + 1);
-        const withHook = useCallback(() => setCount(value => value + 1), []);
-
-        return h(window.React.Fragment, null,
-            h("p", null, "Either button increments the same parent counter. Each memoized child receives only its callback."),
+    function CounterPanel({ title, count, onIncrement }) {
+        return h("section", { "aria-label": title },
+            h("h2", null, title),
             h("p", { className: "wknd-callback__count" },
-                "Parent count: ", h("strong", { "data-parent-count": true }, count)),
-            h("div", { className: "wknd-callback__grid" },
-                h("section", { "aria-label": "Without useCallback" },
-                    h("h2", null, "Without useCallback"),
-                    h(CounterChild, { onIncrement: withoutHook })),
-                h("section", { "aria-label": "With useCallback" },
-                    h("h2", null, "With useCallback"),
-                    h(CounterChild, { onIncrement: withHook }))),
-            h("p", null, "The counters start at 1 for the initial render. They track callback references delivered to the child, not function allocations."));
+                "Count: ", h("strong", { "data-parent-count": true }, count)),
+            h(CounterChild, { onIncrement }));
+    }
+
+    function WithoutCallback() {
+        const [count, setCount] = useState(0);
+        const onIncrement = () => setCount(value => value + 1);
+        return h(CounterPanel, { title: "Without useCallback", count, onIncrement });
+    }
+
+    function WithCallback() {
+        const [count, setCount] = useState(0);
+        const onIncrement = useCallback(() => setCount(value => value + 1), []);
+        return h(CounterPanel, { title: "With useCallback", count, onIncrement });
+    }
+
+    function Comparison() {
+        return h(window.React.Fragment, null,
+            h("p", null, "Each button increments the counter in its own example. Each memoized child receives only its callback."),
+            h("div", { className: "wknd-callback__grid" }, h(WithoutCallback), h(WithCallback)),
+            h("p", null, "The reference and render counters include the initial render."));
     }
 
     document.querySelectorAll("[data-use-callback-demo]:not([data-use-callback-ready])").forEach(panel => {
