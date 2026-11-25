@@ -35,6 +35,13 @@ CATALOG_PAGES = (
      "Check current temperature, humidity and wind in Bali.",
      "Clouds across the sky", "531756"),
 )
+REACT_ITEM = ("react-index-issue", "React Index Issue", "",
+              "See how React keys affect state when list items move.",
+              "Laptop displaying a component library", "")
+REACT_COMPONENTS = {
+    "index-key": "/apps/wknd-demo/components/react-index-key",
+    "stable-id": "/apps/wknd-demo/components/react-stable-id",
+}
 TEMPLATE_SOURCE = "/conf/wknd/settings/wcm/templates/adventure-page-template"
 TEMPLATE_TARGET = f"{TEMPLATE_SOURCE}-demo"
 POLICY_ROOT = "/conf/wknd/settings/wcm/policies"
@@ -55,6 +62,8 @@ FILTER = f"""<?xml version="1.0" encoding="UTF-8"?>
     <filter root="{LOGS_COMPONENT}" mode="replace"/>
     <filter root="{WEATHER_COMPONENT}" mode="replace"/>
     <filter root="{WEATHER_LOG_CONFIG}" mode="replace"/>
+    <filter root="{REACT_COMPONENTS['index-key']}" mode="replace"/>
+    <filter root="{REACT_COMPONENTS['stable-id']}" mode="replace"/>
     <filter root="{DEMO_CLIENTLIB}" mode="replace"/>
 </workspaceFilter>
 """
@@ -737,7 +746,7 @@ def build_section(landing_source: bytes) -> bytes:
         listing = next(child for child in tabs.childNodes if child.nodeType == child.ELEMENT_NODE)
         listing.setAttribute("listFrom", "static")
         listing.setAttribute("pages", "[" + ",".join(
-            f"{SECTION_TARGET}/{slug}" for slug in (LOGS_SLUG, *(item[0] for item in CATALOG_PAGES))
+            f"{SECTION_TARGET}/{slug}" for slug in (LOGS_SLUG, *(item[0] for item in CATALOG_PAGES), REACT_ITEM[0])
         ) + "]")
         listing.removeAttribute("orderBy")
         return document.toxml(encoding="UTF-8")
@@ -764,7 +773,7 @@ def build_catalog_page(page_source: bytes, item: tuple[str, ...]) -> bytes:
         for key, value in {
             "jcr:primaryType": "nt:unstructured",
             "sling:resourceType": "wknd/components/image",
-            "fileReference": SECTION_IMAGE if slug == LOGS_SLUG else f"{CATALOG_ASSETS}/{slug}.jpg",
+            "fileReference": SECTION_IMAGE if slug in (LOGS_SLUG, REACT_ITEM[0]) else f"{CATALOG_ASSETS}/{slug}.jpg",
             "alt": alt,
             "altValueFromDAM": "{Boolean}false",
         }.items():
@@ -776,6 +785,12 @@ def build_catalog_page(page_source: bytes, item: tuple[str, ...]) -> bytes:
             panel.setAttribute("jcr:primaryType", "nt:unstructured")
             panel.setAttribute("sling:resourceType", "wknd-demo/components/system-logs")
             body.appendChild(panel)
+        if slug == REACT_ITEM[0]:
+            for name, path in REACT_COMPONENTS.items():
+                panel = document.createElement(name.replace("-", "_"))
+                panel.setAttribute("jcr:primaryType", "nt:unstructured")
+                panel.setAttribute("sling:resourceType", path.removeprefix("/apps/"))
+                body.appendChild(panel)
         return document.toxml(encoding="UTF-8")
 
 
@@ -819,7 +834,7 @@ def weather_sources(weather_source: Path, bundle: Path, log_configuration: str) 
 
 def build_package(
     wknd_release: Path, output: Path, weather_source: Path, section_image: Path,
-    weather_bundle: Path | None = None,
+    weather_bundle: Path | None = None, react_source: Path = Path("react-index"),
 ) -> None:
     with ZipFile(wknd_release) as release:
         sample_bytes = release.read(SAMPLE_PACKAGE)
@@ -925,7 +940,16 @@ def build_package(
             write_jpeg_asset(package, f"{CATALOG_ASSETS}/{slug}.jpg",
                              section_image.parent / "catalog-images" / f"{slug}.jpg",
                              asset_definition)
+        package.writestr(f"jcr_root{SECTION_TARGET}/{REACT_ITEM[0]}/.content.xml",
+                         build_catalog_page(page, REACT_ITEM))
         clientlib = f"jcr_root{DEMO_CLIENTLIB}"
+        for name, root in REACT_COMPONENTS.items():
+            directory = react_source / "components" / name
+            for source in sorted(directory.iterdir()):
+                package.write(source, f"jcr_root{root}/{source.name}")
+        assets = react_source / "assets"
+        for source in sorted(path for path in assets.rglob("*") if path.is_file()):
+            package.write(source, f"{clientlib}/resources/react-index/{source.relative_to(assets).as_posix()}")
         package.writestr(f"{clientlib}/.content.xml", DEMO_CLIENTLIB_DEFINITION)
         package.writestr(f"{clientlib}/css.txt", "demo-components.css\n")
         package.writestr(f"{clientlib}/demo-components.css", DEMO_COMPONENTS_CSS)
@@ -962,5 +986,6 @@ if __name__ == "__main__":
     parser.add_argument("--weather-source", type=Path, default=Path("weather"))
     parser.add_argument("--section-image", type=Path, default=Path("content-package/demo-components.jpg"))
     parser.add_argument("--weather-bundle", type=Path)
+    parser.add_argument("--react-source", type=Path, default=Path("react-index"))
     args = parser.parse_args()
-    build_package(args.wknd_release, args.output, args.weather_source, args.section_image, args.weather_bundle)
+    build_package(args.wknd_release, args.output, args.weather_source, args.section_image, args.weather_bundle, args.react_source)

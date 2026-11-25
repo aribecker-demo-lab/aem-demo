@@ -27,7 +27,8 @@ COPY --from=weather-backend /build/target/weather-1.0.0.jar /tmp/weather-bundle.
 COPY weather/component /tmp/weather/component
 COPY weather/system-logs /tmp/weather/system-logs
 COPY weather/clientlib /tmp/weather/clientlib
-RUN python /tmp/build.py /tmp/aem-guides-wknd.all-4.0.4.zip /tmp/wknd-demo-adventure-1.0.0.zip --weather-source /tmp/weather --section-image /tmp/demo-components.jpg --weather-bundle /tmp/weather-bundle.jar
+COPY react-index /tmp/react-index
+RUN python /tmp/build.py /tmp/aem-guides-wknd.all-4.0.4.zip /tmp/wknd-demo-adventure-1.0.0.zip --weather-source /tmp/weather --section-image /tmp/demo-components.jpg --weather-bundle /tmp/weather-bundle.jar --react-source /tmp/react-index
 RUN printf '%s\tDocker\tWKND and demo packages\t—\t—\tBuilding\tBuilt\tVerified WKND archive and generated FileVault package\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > /tmp/content-timeline.tsv
 RUN printf "BUILD WKND: Verified WKND 4.0.4 archive SHA-256\nBUILD DEMO: Generated FileVault content package\n" > /tmp/content-build.log
 

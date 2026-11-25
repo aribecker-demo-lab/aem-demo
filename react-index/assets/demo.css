@@ -1,0 +1,26 @@
+.wknd-react-list {
+    border: 1px solid #d5dce2;
+    padding: 1.25rem;
+    margin-block: 1.5rem;
+    border-radius: .5rem;
+}
+
+.wknd-react-list button {
+    margin-inline-end: .65rem;
+    padding: .4rem .8rem;
+    font: inherit;
+    cursor: pointer;
+}
+
+.wknd-react-list li {
+    padding-block: .4rem;
+}
+
+.wknd-react-list li span {
+    display: block;
+    color: #455063;
+}
+
+.wknd-react-list .wknd-react-list-order {
+    overflow-wrap: anywhere;
+}
