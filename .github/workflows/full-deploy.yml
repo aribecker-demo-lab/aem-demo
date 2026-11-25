@@ -11,8 +11,13 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: aem-demo-full
+    timeout-minutes: 25
     steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Request Docker rebuild of main in Render
+        id: trigger
         env:
           RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
         run: |
@@ -22,6 +27,22 @@ jobs:
             https://api.render.com/deploy/srv-dc1oho59fdbs73be0n6g\?key=*) ;;
             *) echo "Deploy Hook does not match the existing service."; exit 1 ;;
           esac
+          printf 'requested=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
           printf 'url = "%s"\n' "$RENDER_DEPLOY_HOOK" |
             curl --config - --fail --silent --show-error --max-time 30 --output /dev/null
           echo 'Render accepted the rebuild request. Follow the deployment in Render.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Import the Render timeline into AEM
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          AEM_DEPLOY_USER: ${{ secrets.AEM_DEPLOY_USER }}
+          AEM_DEPLOY_PASSWORD: ${{ secrets.AEM_DEPLOY_PASSWORD }}
+          REQUESTED: ${{ steps.trigger.outputs.requested }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$RENDER_API_KEY" || -z "$AEM_DEPLOY_USER" || -z "$AEM_DEPLOY_PASSWORD" ]]; then
+            echo 'Skipped platform log import because the Full Deploy environment is missing Render or AEM credentials.' >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          python deploy/collect_render_events.py \
+            --service srv-dc1oho59fdbs73be0n6g --owner tea-db1drlhsrm7s73b7qmhg \
+            --commit "$GITHUB_SHA" --requested "$REQUESTED" | tee -a "$GITHUB_STEP_SUMMARY"

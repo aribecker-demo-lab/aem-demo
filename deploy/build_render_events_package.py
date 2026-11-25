@@ -7,6 +7,8 @@ from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 
 
+ANSI = re.compile(r"\x1b(?:\[[0-?]*[ -/]*[@-~]|\([A-Z])")
+
 MESSAGES = (
     (re.compile(r"cloning from"), "Source", "Pending", "Cloning", "Render cloned the repository"),
     (re.compile(r"checking out commit"), "Source", "Cloning", "Checked out", "Render checked out the deploy commit"),
@@ -16,7 +18,7 @@ MESSAGES = (
     (re.compile(r"\bdeploying\b"), "Service", "Building", "Deploying", "Render started the rollout"),
     (re.compile(r"service is live|service is now live"), "Service", "Deploying", "Live", "Render announced that the service was live"),
     (re.compile(r"startup completed|startup complete"), "AEM", "Starting", "Started", "AEM reported startup complete"),
-    (re.compile(r"launching .*aem|starting .*quickstart"), "AEM", "Pending", "Starting", "AEM launcher started"),
+    (re.compile(r"launching .*aem|starting .*quickstart|starting apache sling"), "AEM", "Pending", "Starting", "AEM launcher started"),
 )
 
 
@@ -38,8 +40,9 @@ def timeline(deploy, logs):
         add(deploy["startedAt"], "Render", "Deployment", "Requested", "In progress", "Render deployment started")
     add(deploy["finishedAt"], "Render", "Deployment", "In progress", "Live", "Render marked the deployment live")
     for log in logs:
+        message = ANSI.sub("", log["message"]).lower()
         for pattern, entity, before, after, detail in MESSAGES:
-            if pattern.search(log["message"].lower()):
+            if pattern.search(message):
                 kind = "Runtime" if entity == "AEM" else "Docker" if entity == "Image" else "Render"
                 add(log["timestamp"], kind, entity, before, after, detail)
                 break
