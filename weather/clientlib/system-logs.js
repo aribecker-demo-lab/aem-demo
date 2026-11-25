@@ -216,6 +216,38 @@
                 });
             }
 
+            function renderLifecycle(events) {
+                var container = panel.querySelector("[data-system-lifecycle]");
+                if (!container) return;
+                container.textContent = "";
+                if (!events.length) {
+                    container.textContent = "No lifecycle events have been captured.";
+                    return;
+                }
+                var table = document.createElement("table");
+                var heading = table.createTHead().insertRow();
+                ["Timestamp (UTC)", "Type", "Bundle or component", "Bundle ID / version", "Previous state",
+                    "New state", "Event or detail"].forEach(function (label) {
+                    var cell = document.createElement("th");
+                    cell.scope = "col";
+                    cell.textContent = label;
+                    heading.append(cell);
+                });
+                var body = table.createTBody();
+                events.forEach(function (event) {
+                    var row = body.insertRow();
+                    [event.timestamp, event.kind, event.name, event.bundleId + " / " + event.version,
+                        event.from, event.to, event.event].forEach(function (value, index) {
+                        var cell = row.insertCell();
+                        cell.textContent = value;
+                        if (index === 0) cell.className = "wknd-log-time";
+                        if (index === 2) cell.className = "wknd-log-component";
+                        if (index === 5) cell.className = "wknd-log-stage";
+                    });
+                });
+                container.append(table);
+            }
+
             function render(data) {
                 panel.querySelector("[data-system-logs-commit]").textContent =
                     data.commit ? "Deployed commit: " + data.commit : "";
@@ -241,6 +273,7 @@
                 });
                 renderLogFiles(data.logFiles || []);
                 renderSettings(data.systemSettings || []);
+                renderLifecycle(data.lifecycleHistory || []);
                 results.hidden = false;
                 message.textContent = "";
             }

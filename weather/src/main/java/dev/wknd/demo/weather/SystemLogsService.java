@@ -30,6 +30,7 @@ public final class SystemLogsService {
     private static final Path LOG_ROOT = Path.of(
         System.getProperty("sling.home", "/aem/crx-quickstart"), "logs").toAbsolutePath().normalize();
     private static final Path AEM_LOG = LOG_ROOT.resolve("error.log");
+    private static final Path LIFECYCLE_LOG = LOG_ROOT.resolve("wknd-osgi-lifecycle.log");
     private static final Path WEATHER_LOG = LOG_ROOT.resolve("wknd-weather.log");
     private static final Path BUILD_LOG = Path.of("/opt/wknd-diagnostics/build.log");
     private static final List<String> PACKAGE_NAMES = List.of(
@@ -56,7 +57,17 @@ public final class SystemLogsService {
                 new Status("Weather / System Logs bundle", bundle != null
                     && bundle.getState() == Bundle.ACTIVE ? "Active" : "Inactive")
             ), buildEvents(tail(BUILD_LOG)), runtimeEvents(Stream.concat(aemLines.stream(), tail(WEATHER_LOG).stream()).distinct().toList()),
-            recentAemLog(aemLines), listLogs(LOG_ROOT), SystemSettings.read(slingSettings, bundle));
+            recentAemLog(aemLines), listLogs(LOG_ROOT), SystemSettings.read(slingSettings, bundle), lifecycleHistory());
+    }
+
+    private static List<Transition> lifecycleHistory() {
+        return Stream.concat(tail(LIFECYCLE_LOG.resolveSibling("wknd-osgi-lifecycle.log.1")).stream(),
+                tail(LIFECYCLE_LOG).stream())
+            .map(line -> line.split("\\t", 8))
+            .filter(fields -> fields.length == 8)
+            .map(fields -> new Transition(fields[0], fields[1], fields[2], fields[3], fields[4],
+                fields[5], fields[6], fields[7]))
+            .toList();
     }
 
     static List<String> listLogs(Path root) {
@@ -181,5 +192,8 @@ public final class SystemLogsService {
     record Status(String name, String state) {}
     record Snapshot(String commit, String renderService, List<Status> status,
                     List<String> build, List<String> runtime, List<String> packageLogs,
-                    List<String> logFiles, List<SystemSettings.Group> systemSettings) {}
+                    List<String> logFiles, List<SystemSettings.Group> systemSettings,
+                    List<Transition> lifecycleHistory) {}
+    record Transition(String timestamp, String kind, String name, String bundleId, String version,
+                      String from, String to, String event) {}
 }

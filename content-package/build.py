@@ -125,6 +125,16 @@ DEMO_COMPONENTS_CSS = """[id$="-components-frame"] {
 .wknd-system-logs .wknd-log-url { color: #006763; text-decoration: underline; }
 .wknd-system-logs .wknd-log-component { color: #67419a; font-weight: 600; }
 .wknd-system-logs .wknd-log-context { color: #504269; }
+.wknd-system-logs .wknd-lifecycle-table { overflow: auto; max-height: 28rem; }
+.wknd-system-logs .wknd-lifecycle-table table { border-collapse: collapse; width: 100%; }
+.wknd-system-logs .wknd-lifecycle-table th,
+.wknd-system-logs .wknd-lifecycle-table td {
+    border-bottom: 1px solid #d6d8de;
+    padding: .45rem;
+    text-align: left;
+    vertical-align: top;
+}
+.wknd-system-logs .wknd-lifecycle-table th { position: sticky; top: 0; background: #fff; }
 .wknd-system-logs .wknd-log-stage {
     color: #613382;
     background: #efe4fa;
