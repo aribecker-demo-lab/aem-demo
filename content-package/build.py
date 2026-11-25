@@ -44,7 +44,7 @@ BEM_ITEM = ("bem-demo", "BEM Demo", "",
             "A UI card with callouts identifying its BEM classes", "")
 CALLBACK_ITEM = ("use-callback-demo", "useCallback Demo", "",
                  "Compare callback references and memoized child renders.",
-                 "A cyan React atom surrounded by interface components", "")
+                 "Arrows compare separate callback references with one shared reference", "")
 CALLBACK_COMPONENT = "/apps/wknd-demo/components/react-use-callback"
 BEM_COMPONENT = "/apps/wknd-demo/components/react-bem-card"
 REACT_COMPONENTS = {
@@ -783,10 +783,7 @@ def build_catalog_page(page_source: bytes, item: tuple[str, ...]) -> bytes:
             if child.nodeType == child.ELEMENT_NODE and (not panel_id or child.getAttribute("id") != panel_id):
                 body.removeChild(child)
 
-        cover_path = {
-            LOGS_SLUG: SECTION_IMAGE,
-            CALLBACK_ITEM[0]: f"{CATALOG_ASSETS}/react-demo.jpg",
-        }.get(slug, f"{CATALOG_ASSETS}/{slug}.jpg")
+        cover_path = SECTION_IMAGE if slug == LOGS_SLUG else f"{CATALOG_ASSETS}/{slug}.jpg"
         cover = document.createElement("card_image")
         for key, value in {
             "jcr:primaryType": "nt:unstructured",
@@ -1002,6 +999,7 @@ def build_package(
         for name, filename, title in (
             ("react-demo", "react-demo-cover.jpg", "React Demo cover"),
             ("bem-example", "bem-example.jpg", "BEM card example image"),
+            (CALLBACK_ITEM[0], "use-callback-cover.jpg", "useCallback Demo cover"),
         ):
             definition = SECTION_IMAGE_DEFINITION.replace(
                 'dc:title="Illustration of a component library"', f'dc:title="{title}"',
