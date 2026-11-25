@@ -42,7 +42,6 @@ REACT_ITEM = ("react-index-issue", "React Index Issue", "",
 BEM_ITEM = ("bem-demo", "BEM Demo", "",
             "Inspect the CSS classes on a card, its elements and modifiers.",
             "A UI card with callouts identifying its BEM classes", "")
-REACT_COVER = f"{CATALOG_ASSETS}/{REACT_ITEM[0]}.jpg"
 BEM_COMPONENT = "/apps/wknd-demo/components/react-bem-card"
 REACT_COMPONENTS = {
     "index-key": "/apps/wknd-demo/components/react-index-key",
@@ -941,7 +940,8 @@ def build_package(
         description="Explore React list keys and BEM class naming.",
         teaser_title="Explore React and CSS",
         teaser_description="Try list reconciliation and inspect the classes behind a BEM card.",
-        image=REACT_COVER, image_alt=REACT_ITEM[4], slugs=(REACT_ITEM[0], BEM_ITEM[0]),
+        image=f"{CATALOG_ASSETS}/react-demo.jpg",
+        image_alt="A cyan React atom surrounded by interface components", slugs=(REACT_ITEM[0], BEM_ITEM[0]),
     )
 
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -987,6 +987,14 @@ def build_package(
         )
         write_jpeg_asset(package, f"{CATALOG_ASSETS}/{BEM_ITEM[0]}.jpg",
                          react_source / "bem-cover.jpg", bem_cover)
+        for name, filename, title in (
+            ("react-demo", "react-demo-cover.jpg", "React Demo cover"),
+            ("bem-example", "bem-example.jpg", "BEM card example image"),
+        ):
+            definition = SECTION_IMAGE_DEFINITION.replace(
+                'dc:title="Illustration of a component library"', f'dc:title="{title}"',
+            )
+            write_jpeg_asset(package, f"{CATALOG_ASSETS}/{name}.jpg", react_source / filename, definition)
         clientlib = f"jcr_root{DEMO_CLIENTLIB}"
         for name, root in REACT_COMPONENTS.items():
             directory = react_source / "components" / name
