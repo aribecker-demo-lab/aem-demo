@@ -37,7 +37,7 @@ CATALOG_PAGES = (
 )
 REACT_ITEM = ("react-index-issue", "React Index Issue", "",
               "See how React keys affect state when list items move.",
-              "Laptop displaying a component library", "")
+              "Two numbered lists show how a moved row can retain the wrong or correct state.", "")
 REACT_COMPONENTS = {
     "index-key": "/apps/wknd-demo/components/react-index-key",
     "stable-id": "/apps/wknd-demo/components/react-stable-id",
@@ -773,7 +773,7 @@ def build_catalog_page(page_source: bytes, item: tuple[str, ...]) -> bytes:
         for key, value in {
             "jcr:primaryType": "nt:unstructured",
             "sling:resourceType": "wknd/components/image",
-            "fileReference": SECTION_IMAGE if slug in (LOGS_SLUG, REACT_ITEM[0]) else f"{CATALOG_ASSETS}/{slug}.jpg",
+            "fileReference": SECTION_IMAGE if slug == LOGS_SLUG else f"{CATALOG_ASSETS}/{slug}.jpg",
             "alt": alt,
             "altValueFromDAM": "{Boolean}false",
         }.items():
@@ -942,6 +942,12 @@ def build_package(
                              asset_definition)
         package.writestr(f"jcr_root{SECTION_TARGET}/{REACT_ITEM[0]}/.content.xml",
                          build_catalog_page(page, REACT_ITEM))
+        react_cover = SECTION_IMAGE_DEFINITION.replace(
+            'dc:title="Illustration of a component library"',
+            'dc:title="React Index Issue cover"',
+        )
+        write_jpeg_asset(package, f"{CATALOG_ASSETS}/{REACT_ITEM[0]}.jpg",
+                         react_source / "cover.jpg", react_cover)
         clientlib = f"jcr_root{DEMO_CLIENTLIB}"
         for name, root in REACT_COMPONENTS.items():
             directory = react_source / "components" / name
