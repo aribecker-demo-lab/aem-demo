@@ -41,7 +41,7 @@ REACT_ITEM = ("react-index-issue", "React Index Issue", "",
               "Two numbered lists show how a moved row can retain the wrong or correct state.", "")
 BEM_ITEM = ("bem-demo", "BEM Demo", "",
             "Inspect the CSS classes on a card, its elements and modifiers.",
-            "Two numbered lists on the cover of the React demos", "")
+            "A UI card with callouts identifying its BEM classes", "")
 REACT_COVER = f"{CATALOG_ASSETS}/{REACT_ITEM[0]}.jpg"
 BEM_COMPONENT = "/apps/wknd-demo/components/react-bem-card"
 REACT_COMPONENTS = {
@@ -779,10 +779,7 @@ def build_catalog_page(page_source: bytes, item: tuple[str, ...]) -> bytes:
             if child.nodeType == child.ELEMENT_NODE and (not panel_id or child.getAttribute("id") != panel_id):
                 body.removeChild(child)
 
-        cover_path = {
-            LOGS_SLUG: SECTION_IMAGE,
-            BEM_ITEM[0]: REACT_COVER,
-        }.get(slug, f"{CATALOG_ASSETS}/{slug}.jpg")
+        cover_path = SECTION_IMAGE if slug == LOGS_SLUG else f"{CATALOG_ASSETS}/{slug}.jpg"
         cover = document.createElement("card_image")
         for key, value in {
             "jcr:primaryType": "nt:unstructured",
@@ -985,6 +982,11 @@ def build_package(
         )
         write_jpeg_asset(package, f"{CATALOG_ASSETS}/{REACT_ITEM[0]}.jpg",
                          react_source / "cover.jpg", react_cover)
+        bem_cover = SECTION_IMAGE_DEFINITION.replace(
+            'dc:title="Illustration of a component library"', 'dc:title="BEM Demo cover"',
+        )
+        write_jpeg_asset(package, f"{CATALOG_ASSETS}/{BEM_ITEM[0]}.jpg",
+                         react_source / "bem-cover.jpg", bem_cover)
         clientlib = f"jcr_root{DEMO_CLIENTLIB}"
         for name, root in REACT_COMPONENTS.items():
             directory = react_source / "components" / name
