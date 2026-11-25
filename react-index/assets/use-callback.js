@@ -3,7 +3,9 @@
 
     const CounterChild = memo(function CounterChild({ onIncrement }) {
         const figures = useRef({ references: new WeakSet(), distinct: 0, renders: 0 });
-        const output = useRef(null);
+        const references = useRef(null);
+        const renders = useRef(null);
+        const pulse = useRef(null);
 
         useLayoutEffect(() => {
             const stats = figures.current;
@@ -12,12 +14,25 @@
                 stats.references.add(onIncrement);
                 stats.distinct += 1;
             }
-            output.current.textContent = stats.distinct + " distinct references · " + stats.renders + " child renders";
+            references.current.textContent = stats.distinct + " distinct references";
+            const counter = renders.current;
+            counter.textContent = stats.renders + " child renders";
+            if (stats.renders > 1) {
+                counter.classList.add("wknd-callback__renders--increased");
+                pulse.current?.cancel();
+                if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+                    pulse.current = counter.animate(
+                        [{ backgroundColor: "#ff9ca8" }, { backgroundColor: "transparent" }],
+                        { duration: 450, easing: "ease-out" });
+                }
+            }
         });
 
         return h(window.React.Fragment, null,
             h("button", { type: "button", onClick: onIncrement }, "Increment"),
-            h("output", { ref: output, className: "wknd-callback__stats", "aria-live": "polite" }));
+            h("output", { className: "wknd-callback__stats", "aria-live": "polite" },
+                h("span", { ref: references }), " · ",
+                h("span", { ref: renders, className: "wknd-callback__renders" })));
     });
 
     function Comparison() {

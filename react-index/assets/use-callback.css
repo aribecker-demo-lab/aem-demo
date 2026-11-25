@@ -13,3 +13,13 @@
 
 .wknd-callback__stats { display: block; margin-block-start: .45rem; }
 .wknd-callback__count { font-variant-numeric: tabular-nums; }
+
+.wknd-callback__renders {
+    padding-inline: .2rem;
+    border-radius: .2rem;
+}
+
+.wknd-callback__renders--increased {
+    color: #9b1c31;
+    font-weight: 700;
+}
