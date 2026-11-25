@@ -1,0 +1,15 @@
+.wknd-callback__grid { display: grid; gap: .8rem; margin-block: .6rem; }
+
+@media (min-width: 44rem) {
+    .wknd-callback__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.wknd-callback__grid section {
+    border: 1px solid #cbd5e7;
+    border-radius: .45rem;
+    padding: .65rem .8rem;
+    background: #f5f8fd;
+}
+
+.wknd-callback__stats { display: block; margin-block-start: .45rem; }
+.wknd-callback__count { font-variant-numeric: tabular-nums; }

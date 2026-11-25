@@ -10,6 +10,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 JCR = "http://www.jcp.org/jcr/1.0"
 APP_ROOTS = (
+    "/apps/wknd-demo/components/react-use-callback",
     "/apps/wknd-demo/components/react-bem-card",
     "/apps/wknd-demo/components/react-index-key",
     "/apps/wknd-demo/components/react-stable-id",
