@@ -226,7 +226,7 @@
                 }
                 var table = document.createElement("table");
                 var heading = table.createTHead().insertRow();
-                ["Timestamp (UTC)", "Type", "Bundle or component", "Bundle ID / version", "Previous state",
+                ["Timestamp (UTC)", "Type", "Bundle or component", "ID / version", "Previous state",
                     "New state", "Event or detail"].forEach(function (label) {
                     var cell = document.createElement("th");
                     cell.scope = "col";
@@ -240,11 +240,14 @@
                     ["dev.wknd.demo.weather.SystemLogsService", "logs-service"],
                     ["dev.wknd.demo.weather.SystemLogsServlet", "logs-servlet"],
                 ]);
+                var environmentColors = new Map([
+                    ["Docker", "docker"], ["Render", "render"], ["Runtime", "runtime"],
+                ]);
                 var body = table.createTBody();
                 events.forEach(function (event) {
                     var row = body.insertRow();
                     row.dataset.lifecycleEntity = event.kind === "Bundle" ? "bundle" :
-                        (componentColors.get(event.name) || "component");
+                        (environmentColors.get(event.kind) || componentColors.get(event.name) || "component");
                     [event.timestamp, event.kind, event.name, event.bundleId + " / " + event.version,
                         event.from, event.to, event.event].forEach(function (value, index) {
                         var cell = row.insertCell();

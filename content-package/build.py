@@ -141,6 +141,9 @@ DEMO_COMPONENTS_CSS = """[id$="-components-frame"] {
 .wknd-system-logs .wknd-lifecycle-table [data-lifecycle-entity="weather-diagnostics"] { background-color: #fbe6ec; }
 .wknd-system-logs .wknd-lifecycle-table [data-lifecycle-entity="logs-service"] { background-color: #dff4f1; }
 .wknd-system-logs .wknd-lifecycle-table [data-lifecycle-entity="logs-servlet"] { background-color: #fce9db; }
+.wknd-system-logs .wknd-lifecycle-table [data-lifecycle-entity="docker"] { background-color: #e1ebfa; }
+.wknd-system-logs .wknd-lifecycle-table [data-lifecycle-entity="render"] { background-color: #f5e8fa; }
+.wknd-system-logs .wknd-lifecycle-table [data-lifecycle-entity="runtime"] { background-color: #e8f2d5; }
 .wknd-system-logs .wknd-lifecycle-table [data-lifecycle-entity="component"] { background-color: #eef0f3; }
 .wknd-system-logs .wknd-log-stage {
     color: #613382;

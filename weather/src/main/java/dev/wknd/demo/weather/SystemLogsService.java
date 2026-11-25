@@ -1,6 +1,10 @@
 package dev.wknd.demo.weather;
 
 import java.io.BufferedReader;
+import java.lang.management.ManagementFactory;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
+import java.util.Comparator;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -57,17 +61,44 @@ public final class SystemLogsService {
                 new Status("Weather / System Logs bundle", bundle != null
                     && bundle.getState() == Bundle.ACTIVE ? "Active" : "Inactive")
             ), buildEvents(tail(BUILD_LOG)), runtimeEvents(Stream.concat(aemLines.stream(), tail(WEATHER_LOG).stream()).distinct().toList()),
-            recentAemLog(aemLines), listLogs(LOG_ROOT), SystemSettings.read(slingSettings, bundle), lifecycleHistory());
+            recentAemLog(aemLines), listLogs(LOG_ROOT), SystemSettings.read(slingSettings, bundle), lifecycleHistory(resolver));
     }
 
-    private static List<Transition> lifecycleHistory() {
-        return Stream.concat(tail(LIFECYCLE_LOG.resolveSibling("wknd-osgi-lifecycle.log.1")).stream(),
-                tail(LIFECYCLE_LOG).stream())
-            .map(line -> line.split("\\t", 8))
-            .filter(fields -> fields.length == 8)
-            .map(fields -> new Transition(fields[0], fields[1], fields[2], fields[3], fields[4],
-                fields[5], fields[6], fields[7]))
-            .toList();
+    private static List<Transition> lifecycleHistory(ResourceResolver resolver) {
+        var osgi = Stream.concat(tail(LIFECYCLE_LOG.resolveSibling("wknd-osgi-lifecycle.log.1")).stream(),
+            tail(LIFECYCLE_LOG).stream());
+        var docker = tail(BUILD_LOG.resolveSibling("build-timeline.tsv")).stream();
+        var render = renderEvents(resolver).stream();
+        String commit = System.getenv("RENDER_GIT_COMMIT");
+        String instance = System.getenv("RENDER_INSTANCE_ID");
+        var started = new Transition(Instant.ofEpochMilli(ManagementFactory.getRuntimeMXBean().getStartTime()).toString(),
+            "Runtime", "AEM JVM", instance == null ? "—" : instance, commit == null ? "—" : commit,
+            "Pending", "Started", "Java process started");
+        return Stream.concat(Stream.of(started), Stream.of(osgi, docker, render).flatMap(lines -> lines)
+                .map(SystemLogsService::transition).filter(java.util.Objects::nonNull))
+            .sorted(Comparator.comparing(event -> Instant.parse(event.timestamp()))).toList();
+    }
+
+    private static List<String> renderEvents(ResourceResolver resolver) {
+        var file = resolver.getResource("/apps/wknd-demo/diagnostics/render-events.tsv");
+        if (file == null) return List.of();
+        try (InputStream stream = file.adaptTo(InputStream.class)) {
+            if (stream == null) return List.of();
+            return new String(stream.readNBytes(MAX_BYTES), StandardCharsets.UTF_8).lines().toList();
+        } catch (IOException failure) {
+            return List.of();
+        }
+    }
+
+    private static Transition transition(String line) {
+        String[] fields = line.split("\\t", 8);
+        if (fields.length != 8) return null;
+        try {
+            return new Transition(Instant.parse(fields[0]).toString(), fields[1], fields[2], fields[3],
+                fields[4], fields[5], fields[6], redact(fields[7]));
+        } catch (DateTimeParseException failure) {
+            return null;
+        }
     }
 
     static List<String> listLogs(Path root) {
