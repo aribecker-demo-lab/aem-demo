@@ -233,9 +233,18 @@
                     cell.textContent = label;
                     heading.append(cell);
                 });
+                var componentColors = new Map([
+                    ["dev.wknd.demo.weather.WeatherService", "weather-service"],
+                    ["dev.wknd.demo.weather.WeatherServlet", "weather-servlet"],
+                    ["dev.wknd.demo.weather.WeatherDiagnosticsServlet", "weather-diagnostics"],
+                    ["dev.wknd.demo.weather.SystemLogsService", "logs-service"],
+                    ["dev.wknd.demo.weather.SystemLogsServlet", "logs-servlet"],
+                ]);
                 var body = table.createTBody();
                 events.forEach(function (event) {
                     var row = body.insertRow();
+                    row.dataset.lifecycleEntity = event.kind === "Bundle" ? "bundle" :
+                        (componentColors.get(event.name) || "component");
                     [event.timestamp, event.kind, event.name, event.bundleId + " / " + event.version,
                         event.from, event.to, event.event].forEach(function (value, index) {
                         var cell = row.insertCell();

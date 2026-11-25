@@ -135,6 +135,13 @@ DEMO_COMPONENTS_CSS = """[id$="-components-frame"] {
     vertical-align: top;
 }
 .wknd-system-logs .wknd-lifecycle-table th { position: sticky; top: 0; background: #fff; }
+.wknd-system-logs .wknd-lifecycle-table [data-lifecycle-entity="bundle"] { background-color: #e3f0fc; }
+.wknd-system-logs .wknd-lifecycle-table [data-lifecycle-entity="weather-service"] { background-color: #e5f4e9; }
+.wknd-system-logs .wknd-lifecycle-table [data-lifecycle-entity="weather-servlet"] { background-color: #fff1d4; }
+.wknd-system-logs .wknd-lifecycle-table [data-lifecycle-entity="weather-diagnostics"] { background-color: #fbe6ec; }
+.wknd-system-logs .wknd-lifecycle-table [data-lifecycle-entity="logs-service"] { background-color: #dff4f1; }
+.wknd-system-logs .wknd-lifecycle-table [data-lifecycle-entity="logs-servlet"] { background-color: #fce9db; }
+.wknd-system-logs .wknd-lifecycle-table [data-lifecycle-entity="component"] { background-color: #eef0f3; }
 .wknd-system-logs .wknd-log-stage {
     color: #613382;
     background: #efe4fa;
