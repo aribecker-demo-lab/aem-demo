@@ -4,8 +4,9 @@
         /(?<url>https?:\/\/[^\s<>"']+|(?<=\b(?:GET|HEAD|POST|PUT|PATCH|DELETE|OPTIONS) )\/[^\s"']*|(?<=\[)\/(?:content|apps|libs|etc\.clientlibs)\/[^\s\]]*)/,
         /(?<level>\b(?:ERROR|FATAL|WARN(?:ING)?|INFO|DEBUG|TRACE)\b)(?=[\]*\s·:])/,
         /(?<component>\bWKND_WEATHER\b|\b(?:org|com|dev|net|io)\.(?:[\w$-]+\.)+[\w$-]+\b|\b[A-Za-z0-9_-]+\/components\/[\w/-]+)/,
+        /(?<stage>\b(?:[A-Z]+_(?:REQUEST_)?(?:START|STARTED|END|FINISHED|ACTIVATED|DEACTIVATED|SUCCESS|FAILED|RESULT|ERROR)|FALLBACK|CACHE_(?:HIT|MISS|UPDATED)|JSON_PARSED|startup|shutdown|activation|deactivation|activated|deactivated|starting|started|finished|completed)\b)/i,
         /(?<context>\b(?:trace|status|durationMs|remainingMs|provider|role|temperatureC|humidityPct|windKmh)=[^\s]+)/,
-    ].map(function (pattern) { return pattern.source; }).join("|"), "g");
+    ].map(function (pattern) { return pattern.source; }).join("|"), "gi");
 
     function colorLog(target, text, emptyMessage) {
         target.textContent = "";
@@ -28,7 +29,133 @@
         target.append(fragment);
     }
 
+    var sourceTokens = /(?<comment>\/\*[\s\S]*?\*\/|\/\/[^\n]*|<!--[\s\S]*?-->)|(?<string>"(?:\\[\s\S]|[^"\\])*"|'(?:\\[\s\S]|[^'\\])*'|`(?:\\[\s\S]|[^`\\])*`)|(?<tag><\/?[\w:.-]+)|(?<annotation>@[\w.]+)|(?<keyword>\b(?:package|import|public|private|protected|class|record|interface|static|final|void|return|new|try|catch|finally|throw|throws|if|else|switch|case|default|var|const|let|async|await|function|boolean|int|long|double|true|false|null)\b)|(?<number>\b\d+(?:\.\d+)?\b)/g;
+
+    function sourceCode(text) {
+        var pre = document.createElement("pre");
+        var code = document.createElement("code");
+        var end = 0;
+        for (var match of text.matchAll(sourceTokens)) {
+            var token = document.createElement("span");
+            var kind = Object.keys(match.groups).find(function (key) { return match.groups[key]; });
+            token.className = "wknd-source-" + kind;
+            token.textContent = match[0];
+            code.append(text.slice(end, match.index), token);
+            end = match.index + match[0].length;
+        }
+        code.append(text.slice(end));
+        pre.tabIndex = 0;
+        pre.append(code);
+        return pre;
+    }
+
+    function xmlTree(element, depth) {
+        var node = document.createElement("details");
+        var summary = document.createElement("summary");
+        var name = document.createElement("code");
+        name.className = "wknd-source-tag";
+        name.textContent = "<" + element.tagName + ">";
+        summary.append(name);
+        node.append(summary);
+        node.open = depth === 0;
+        if (element.attributes.length) {
+            var values = document.createElement("dl");
+            Array.from(element.attributes).forEach(function (attribute) {
+                var key = document.createElement("dt");
+                var value = document.createElement("dd");
+                key.className = "wknd-source-annotation";
+                key.textContent = attribute.name;
+                value.className = "wknd-source-string";
+                value.textContent = attribute.value;
+                values.append(key, value);
+            });
+            node.append(values);
+        }
+        Array.from(element.childNodes).forEach(function (child) {
+            if (child.nodeType === 1) {
+                node.append(xmlTree(child, depth + 1));
+            } else if ((child.nodeType === 3 || child.nodeType === 4) && child.textContent.trim()) {
+                node.append(sourceCode(child.textContent.trim()));
+            }
+        });
+        return node;
+    }
+
+    function weatherSource(file) {
+        var details = document.createElement("details");
+        var title = document.createElement("summary");
+        title.textContent = file.path;
+        details.append(title);
+        details.addEventListener("toggle", function show() {
+            if (!details.open) return;
+            details.removeEventListener("toggle", show);
+            if (file.path.endsWith(".xml")) {
+                var doc = new DOMParser().parseFromString(file.source, "application/xml");
+                if (!doc.querySelector("parsererror")) {
+                    details.append(xmlTree(doc.documentElement, 0));
+                    var raw = document.createElement("details");
+                    var label = document.createElement("summary");
+                    label.textContent = "Raw XML";
+                    raw.append(label, sourceCode(file.source));
+                    details.append(raw);
+                    return;
+                }
+            }
+            details.append(sourceCode(file.source));
+        });
+        return details;
+    }
+
+    function loadOnOpen(details, container, url, read, render, message, refresh) {
+        var loading = false;
+        var loaded = false;
+        details.addEventListener("toggle", function () {
+            if (!details.open || loading || (loaded && !refresh)) return;
+            loading = true;
+            container.textContent = "Loading…";
+            fetch(url, { cache: "no-store" })
+                .then(function (response) {
+                    if (response.status === 401 || response.status === 403) {
+                        throw new Error("Sign in as the AEM demo administrator to view this section.");
+                    }
+                    if (!response.ok) throw new Error(message);
+                    return read(response);
+                })
+                .then(function (content) {
+                    render(content);
+                    loaded = true;
+                })
+                .catch(function (error) { container.textContent = error.message; })
+                .finally(function () { loading = false; });
+        });
+    }
+
+    function initializeWeatherDocs() {
+        document.querySelectorAll("[data-weather-docs]").forEach(function (panel) {
+            if (panel.dataset.weatherDocsInitialized) return;
+            panel.dataset.weatherDocsInitialized = "true";
+            var url = panel.dataset.weatherDocs;
+            var log = panel.querySelector("[data-weather-log]");
+            var pre = log.querySelector("pre");
+            loadOnOpen(log, pre, url + "?view=log", function (response) { return response.text(); },
+                function (text) { colorLog(pre, text, "Empty log."); }, "Weather log is unavailable.", true);
+            var sources = panel.querySelector("[data-weather-sources]");
+            var files = sources.querySelector("[data-weather-files]");
+            loadOnOpen(sources, files, url, function (response) { return response.json(); },
+                function (snapshot) {
+                    files.textContent = "";
+                    if (!snapshot.hasDialog) {
+                        var note = document.createElement("p");
+                        note.textContent = "Weather has no Author dialog.";
+                        files.append(note);
+                    }
+                    snapshot.files.forEach(function (file) { files.append(weatherSource(file)); });
+                }, "Weather source files are unavailable.", false);
+        });
+    }
+
     function initialize() {
+        initializeWeatherDocs();
         document.querySelectorAll("[data-system-logs-url]").forEach(function (panel) {
             if (panel.dataset.systemLogsInitialized) return;
             panel.dataset.systemLogsInitialized = "true";

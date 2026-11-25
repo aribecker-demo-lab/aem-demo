@@ -11,3 +11,17 @@
         <p class="wknd-demo-weather__source" data-weather-source></p>
     </div>
 </section>
+
+<section data-sly-test="${currentPage.path == '/content/wknd/us/en/aem-demo/weather'}"
+    class="wknd-system-logs" data-weather-docs="${resource.path}.weatherdocs.json">
+    <h3>Weather diagnostics and source code</h3>
+    <details data-weather-log>
+        <summary>Weather log</summary>
+        <pre tabindex="0" aria-label="Weather log"></pre>
+    </details>
+    <details data-weather-sources>
+        <summary>Source code and component definitions</summary>
+        <p>Dependency injection is defined by the OSGi annotations and generated service descriptors.</p>
+        <div data-weather-files></div>
+    </details>
+</section>

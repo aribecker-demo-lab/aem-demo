@@ -125,6 +125,22 @@ DEMO_COMPONENTS_CSS = """[id$="-components-frame"] {
 .wknd-system-logs .wknd-log-url { color: #006763; text-decoration: underline; }
 .wknd-system-logs .wknd-log-component { color: #67419a; font-weight: 600; }
 .wknd-system-logs .wknd-log-context { color: #504269; }
+.wknd-system-logs .wknd-log-stage {
+    color: #613382;
+    background: #efe4fa;
+    font-weight: 800;
+    padding-inline: .15em;
+}
+.wknd-system-logs [data-weather-files] details { margin-block: .4rem; }
+.wknd-system-logs [data-weather-files] details details { margin-inline-start: 1rem; }
+.wknd-system-logs [data-weather-files] summary { overflow-wrap: anywhere; }
+.wknd-system-logs .wknd-source-comment { color: #4c6057; font-style: italic; }
+.wknd-system-logs .wknd-source-string { color: #00634b; }
+.wknd-system-logs .wknd-source-tag,
+.wknd-system-logs .wknd-source-keyword { color: #62328c; font-weight: 700; }
+.wknd-system-logs .wknd-source-annotation,
+.wknd-system-logs .wknd-source-number { color: #8b431b; }
+
 .wknd-system-logs [class^="wknd-log-level-"] { font-weight: 700; }
 .wknd-system-logs .wknd-log-level-error,
 .wknd-system-logs .wknd-log-level-fatal { color: #a3182a; background: #ffe2e5; }
@@ -755,8 +771,35 @@ def write_jpeg_asset(package: ZipFile, asset_path: str, image: Path, definition:
 """)
 
 
+def weather_sources(weather_source: Path, bundle: Path, log_configuration: str) -> str:
+    sources = [
+        weather_source / "pom.xml",
+        *sorted((weather_source / "src/main/java").rglob("*.java")),
+        *sorted(path for path in (weather_source / "component").rglob("*") if path.is_file()),
+        *sorted(path for path in (weather_source / "clientlib").glob("*.js") if path.is_file()),
+    ]
+    files = [
+        {"path": f"weather/{path.relative_to(weather_source).as_posix()}",
+         "source": path.read_text(encoding="utf-8")}
+        for path in sources
+    ]
+    files.extend([
+        {"path": "clientlib/demo-components.css", "source": DEMO_COMPONENTS_CSS},
+        {"path": f"jcr_root{WEATHER_LOG_CONFIG}", "source": log_configuration},
+    ])
+    with ZipFile(bundle) as archive:
+        for name in sorted(archive.namelist()):
+            if name.startswith("OSGI-INF/") and name.endswith(".xml"):
+                files.append({"path": name, "source": archive.read(name).decode("utf-8")})
+    return json.dumps({
+        "hasDialog": (weather_source / "component/_cq_dialog/.content.xml").is_file(),
+        "files": files,
+    })
+
+
 def build_package(
     wknd_release: Path, output: Path, weather_source: Path, section_image: Path,
+    weather_bundle: Path | None = None,
 ) -> None:
     with ZipFile(wknd_release) as release:
         sample_bytes = release.read(SAMPLE_PACKAGE)
@@ -878,12 +921,16 @@ def build_package(
         for name in (".content.xml", "weather.html"):
             package.write(weather_source / "component" / name,
                           f"jcr_root{WEATHER_COMPONENT}/{name}")
-        package.writestr(f"jcr_root{WEATHER_LOG_CONFIG}", json.dumps({
+        log_configuration = json.dumps({
             "org.apache.sling.commons.log.names": ["dev.wknd.demo.weather.WeatherService"],
             "org.apache.sling.commons.log.level": "info",
             "org.apache.sling.commons.log.file": "logs/wknd-weather.log",
             "org.apache.sling.commons.log.additiv": True,
-        }))
+        }, indent=2)
+        package.writestr(f"jcr_root{WEATHER_LOG_CONFIG}", log_configuration)
+        if weather_bundle is not None:
+            package.writestr(f"jcr_root{WEATHER_COMPONENT}/weather-sources.json",
+                             weather_sources(weather_source, weather_bundle, log_configuration))
         for name, data in template_files.items():
             package.writestr(f"jcr_root{TEMPLATE_TARGET}/{name}", data)
 
@@ -894,5 +941,6 @@ if __name__ == "__main__":
     parser.add_argument("output", type=Path)
     parser.add_argument("--weather-source", type=Path, default=Path("weather"))
     parser.add_argument("--section-image", type=Path, default=Path("content-package/demo-components.jpg"))
+    parser.add_argument("--weather-bundle", type=Path)
     args = parser.parse_args()
-    build_package(args.wknd_release, args.output, args.weather_source, args.section_image)
+    build_package(args.wknd_release, args.output, args.weather_source, args.section_image, args.weather_bundle)

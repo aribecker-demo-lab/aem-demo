@@ -12,7 +12,9 @@ import java.util.UUID;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Deactivate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,6 +47,20 @@ public final class WeatherService {
         this.clock = clock;
         this.primary = primary;
         this.backup = backup;
+    }
+
+    @Activate
+    void activate() {
+        LOG.info("WKND_WEATHER SERVICE_ACTIVATED location={}", LOCATION);
+    }
+
+    @Deactivate
+    void deactivate() {
+        LOG.info("WKND_WEATHER SERVICE_DEACTIVATED location={}", LOCATION);
+    }
+
+    void requestStage(String stage, int status, long durationMs) {
+        LOG.info("WKND_WEATHER {} status={} durationMs={}", stage, status, durationMs);
     }
 
     public synchronized Weather currentWeather() {

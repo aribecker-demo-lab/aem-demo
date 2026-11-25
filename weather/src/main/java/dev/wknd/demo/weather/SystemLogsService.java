@@ -68,6 +68,10 @@ public final class SystemLogsService {
         }
     }
 
+    BufferedReader openWeatherLog() throws IOException {
+        return openLog(WEATHER_LOG.toString());
+    }
+
     BufferedReader openLog(String name) throws IOException {
         return openLog(LOG_ROOT, name);
     }

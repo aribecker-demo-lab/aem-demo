@@ -39,13 +39,22 @@ public final class WeatherServlet extends SlingSafeMethodsServlet {
         if (bundle != null) {
             response.setHeader("X-WKND-Weather-Bundle", bundle.getVersion().toString());
         }
-        Weather current = weatherService.currentWeather();
-        if (current == null) {
-            response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-            response.getWriter().write("{\"error\":\"Weather is temporarily unavailable.\"}");
-            return;
+        long started = System.nanoTime();
+        weatherService.requestStage("COMPONENT_REQUEST_START", 0, 0);
+        int status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+        try {
+            Weather current = weatherService.currentWeather();
+            if (current == null) {
+                status = HttpServletResponse.SC_SERVICE_UNAVAILABLE;
+                response.setStatus(status);
+                response.getWriter().write("{\"error\":\"Weather is temporarily unavailable.\"}");
+                return;
+            }
+            JSON.toJson(current, response.getWriter());
+            status = HttpServletResponse.SC_OK;
+        } finally {
+            weatherService.requestStage("COMPONENT_REQUEST_END", status,
+                (System.nanoTime() - started) / 1_000_000);
         }
-        JSON.toJson(current, response.getWriter());
     }
-
 }

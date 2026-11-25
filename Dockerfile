@@ -11,10 +11,13 @@ ADD --chmod=0644 --checksum=sha256:93d915fe3cbdc33b612406f1919610e8aa3fc6ffd06e2
 COPY content-package/build.py /tmp/build.py
 COPY content-package/demo-components.jpg /tmp/demo-components.jpg
 COPY content-package/catalog-images /tmp/catalog-images
+COPY weather/pom.xml /tmp/weather/pom.xml
+COPY weather/src/main/java /tmp/weather/src/main/java
+COPY --from=weather-backend /build/target/weather-1.0.0.jar /tmp/weather-bundle.jar
 COPY weather/component /tmp/weather/component
 COPY weather/system-logs /tmp/weather/system-logs
 COPY weather/clientlib /tmp/weather/clientlib
-RUN python /tmp/build.py /tmp/aem-guides-wknd.all-4.0.4.zip /tmp/wknd-demo-adventure-1.0.0.zip --weather-source /tmp/weather --section-image /tmp/demo-components.jpg
+RUN python /tmp/build.py /tmp/aem-guides-wknd.all-4.0.4.zip /tmp/wknd-demo-adventure-1.0.0.zip --weather-source /tmp/weather --section-image /tmp/demo-components.jpg --weather-bundle /tmp/weather-bundle.jar
 RUN printf "BUILD WKND: Verified WKND 4.0.4 archive SHA-256\nBUILD DEMO: Generated FileVault content package\n" > /tmp/content-build.log
 
 FROM docker.io/aemdesign/aem:sdk-2026.2.24464

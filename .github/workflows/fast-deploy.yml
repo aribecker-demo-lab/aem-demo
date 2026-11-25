@@ -50,9 +50,9 @@ jobs:
             'https://github.com/adobe/aem-guides-wknd/releases/download/aem-guides-wknd-4.0.4/aem-guides-wknd.all-4.0.4.zip' \
             -o wknd.zip
           echo '93d915fe3cbdc33b612406f1919610e8aa3fc6ffd06e25136caf49a3dec26592  wknd.zip' | sha256sum --check
-          python content-package/build.py wknd.zip current.zip
-          (cd baseline && python content-package/build.py ../wknd.zip ../baseline.zip)
           mvn --batch-mode --no-transfer-progress -f weather/pom.xml -Dweather.bundle.version="$version" package
+          python content-package/build.py wknd.zip current.zip --weather-bundle weather/target/weather-1.0.0.jar
+          (cd baseline && python content-package/build.py ../wknd.zip ../baseline.zip)
           python deploy/build_hot_package.py --baseline baseline.zip --current current.zip \
             --bundle weather/target/weather-1.0.0.jar --version "$version" \
             --output "output/wknd-demo-hot-$version.zip" --guards output/guards.json
