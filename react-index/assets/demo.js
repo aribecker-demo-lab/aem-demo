@@ -20,21 +20,26 @@
             label: "Text for item number " + ["one", "two", "three", "four", "five"][index],
         }));
 
-        function Row({ item, index, reactKey }) {
+        function Row({ item, index, reactKey, moved }) {
             const [savedLabel] = useState(item.label);
-            return h("tr", null,
+            const result = savedLabel === item.label ? "match" : "mismatch";
+            return h("tr", { "data-moved-result": moved ? result : undefined },
                 h("td", null, index),
                 h("td", null, h("code", null, reactKey)),
                 h("td", null, item.label),
-                h("td", null, h("strong", null, savedLabel)));
+                h("td", null, h("strong", null, savedLabel),
+                    moved && h("span", { className: "wknd-react-move-result" },
+                        result === "match" ? "State moved with item" : "State mismatch")));
         }
 
         function ListDemo({ stable }) {
-            const [items, setItems] = useState(initial);
+            const [{ items, movedId }, setList] = useState({ items: initial, movedId: null });
             const [revision, setRevision] = useState(0);
-            const rotate = () => setItems(([first, ...rest]) => [...rest, first]);
+            const rotate = () => setList(({ items: [first, ...rest] }) => ({
+                items: [...rest, first], movedId: first.id,
+            }));
             const reset = () => {
-                setItems(initial);
+                setList({ items: initial, movedId: null });
                 setRevision(value => value + 1);
             };
             return h(window.React.Fragment, null,
@@ -52,7 +57,7 @@
                                 h("th", { key: label, scope: "col" }, label)))),
                         h("tbody", { key: revision }, items.map((item, index) => {
                             const reactKey = stable ? item.id : index;
-                            return h(Row, { key: reactKey, item, index, reactKey });
+                            return h(Row, { key: reactKey, item, index, reactKey, moved: movedId === item.id });
                         })))));
         }
 

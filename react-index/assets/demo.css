@@ -48,3 +48,18 @@
 .wknd-react-list th {
     background: #edf1f5;
 }
+
+.wknd-react-list [data-moved-result="mismatch"] > td {
+    background: #fde5e6;
+    color: #861d2a;
+}
+
+.wknd-react-list [data-moved-result="match"] > td {
+    background: #e1f3e7;
+    color: #175533;
+}
+
+.wknd-react-move-result {
+    display: block;
+    font-size: .8em;
+}
