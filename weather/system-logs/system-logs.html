@@ -4,8 +4,10 @@
     <div data-system-logs-results hidden>
         <p data-system-logs-commit></p>
         <p><a data-system-logs-render>Full build and deployment history in Render</a></p>
-        <h3>Docker image build</h3>
-        <pre data-system-logs-build></pre>
+        <details>
+            <summary>Docker image build</summary>
+            <pre data-system-logs-build tabindex="0" aria-label="Docker image build log"></pre>
+        </details>
         <h3>AEM package and bundle status</h3>
         <ul data-system-logs-status></ul>
         <details>
