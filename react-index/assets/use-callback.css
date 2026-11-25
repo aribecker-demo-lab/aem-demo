@@ -30,3 +30,13 @@
 }
 
 .wknd-callback__count-value--increased { color: #175c35; }
+
+.wknd-callback__grid section { min-width: 0; }
+.wknd-callback__code-title { font-size: .95rem; margin-block: .85rem .3rem; }
+.wknd-callback__code {
+    overflow: auto;
+    padding: .6rem;
+    border-radius: .25rem;
+    background: #eaf0f8;
+    font-size: .8rem;
+}

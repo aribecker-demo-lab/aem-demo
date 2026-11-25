@@ -39,7 +39,11 @@
                 h("span", { ref: renders, className: "wknd-callback__renders" })));
     });
 
-    function CounterPanel({ title, count, onIncrement }) {
+    const childExample = `const CounterChild = memo(function CounterChild({ onIncrement }) {
+  return <button onClick={onIncrement}>Increment</button>;
+});`;
+
+    function CounterPanel({ title, count, onIncrement, example }) {
         const counter = useRef(null);
         const pulse = useRef(null);
 
@@ -55,19 +59,42 @@
                     className: count > 0 ? "wknd-callback__count-value wknd-callback__count-value--increased" :
                         "wknd-callback__count-value",
                 }, "Count: ", h("strong", { "data-parent-count": true }, count))),
-            h(CounterChild, { onIncrement }));
+            h(CounterChild, { onIncrement }),
+            h("h3", { className: "wknd-callback__code-title" }, "Functional JSX"),
+            h("pre", { className: "wknd-callback__code", tabIndex: 0 },
+                h("code", null, example + "\n\n" + childExample)));
     }
 
     function WithoutCallback() {
         const [count, setCount] = useState(0);
         const onIncrement = () => setCount(value => value + 1);
-        return h(CounterPanel, { title: "Without useCallback", count, onIncrement });
+        return h(CounterPanel, { title: "Without useCallback", count, onIncrement, example: `function WithoutCallback() {
+  const [count, setCount] = useState(0);
+  const onIncrement = () => setCount(value => value + 1);
+
+  return (
+    <>
+      <p>Count: {count}</p>
+      <CounterChild onIncrement={onIncrement} />
+    </>
+  );
+}` });
     }
 
     function WithCallback() {
         const [count, setCount] = useState(0);
         const onIncrement = useCallback(() => setCount(value => value + 1), []);
-        return h(CounterPanel, { title: "With useCallback", count, onIncrement });
+        return h(CounterPanel, { title: "With useCallback", count, onIncrement, example: `function WithCallback() {
+  const [count, setCount] = useState(0);
+  const onIncrement = useCallback(() => setCount(value => value + 1), []);
+
+  return (
+    <>
+      <p>Count: {count}</p>
+      <CounterChild onIncrement={onIncrement} />
+    </>
+  );
+}` });
     }
 
     function Comparison() {
