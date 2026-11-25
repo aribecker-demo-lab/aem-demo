@@ -40,3 +40,21 @@
     background: #eaf0f8;
     font-size: .8rem;
 }
+
+.wknd-callback__code code { color: #233047; }
+
+.wknd-callback__diff {
+    display: inline-block;
+    min-width: 100%;
+    border-radius: .2rem;
+    box-shadow: inset 3px 0 currentColor;
+}
+
+.wknd-callback__diff--direct { background: #ffebc2; }
+.wknd-callback__diff--hook { background: #ccefdc; }
+.wknd-callback__token--keyword { color: #653482; font-weight: 700; }
+.wknd-callback__token--call { color: #214c86; }
+.wknd-callback__token--tag { color: #146057; }
+.wknd-callback__token--number { color: #784015; }
+.wknd-callback__token--operator { color: #62417f; }
+.wknd-callback__token--hook { color: #0c5431; font-weight: 800; }

@@ -43,6 +43,27 @@
   return <button onClick={onIncrement}>Increment</button>;
 });`;
 
+    function highlightJsx(source) {
+        const tokens = /(<\/?[A-Za-z][\w]*|\b(?:const|function|return)\b|\b(?:memo|useState|useCallback|setCount)\b|\b\d+\b|=>)/g;
+        return source.split("\n").map((line, index) => {
+            const changed = line.trimStart().startsWith("const onIncrement =");
+            const variant = line.includes("useCallback(") ? "hook" : "direct";
+            return h("span", {
+                key: index,
+                className: changed ? "wknd-callback__diff wknd-callback__diff--" + variant : undefined,
+            }, line.split(tokens).map((part, tokenIndex) => {
+                if (tokenIndex % 2 === 0) return part;
+                let kind = "call";
+                if (part.startsWith("<")) kind = "tag";
+                else if (/^(const|function|return)$/.test(part)) kind = "keyword";
+                else if (/^\d+$/.test(part)) kind = "number";
+                else if (part === "=>") kind = "operator";
+                else if (part === "useCallback") kind = "hook";
+                return h("span", { key: tokenIndex, className: "wknd-callback__token--" + kind }, part);
+            }), "\n");
+        });
+    }
+
     function CounterPanel({ title, count, onIncrement, example }) {
         const counter = useRef(null);
         const pulse = useRef(null);
@@ -62,7 +83,7 @@
             h(CounterChild, { onIncrement }),
             h("h3", { className: "wknd-callback__code-title" }, "Functional JSX"),
             h("pre", { className: "wknd-callback__code", tabIndex: 0 },
-                h("code", null, example + "\n\n" + childExample)));
+                h("code", null, highlightJsx(example + "\n\n" + childExample))));
     }
 
     function WithoutCallback() {
