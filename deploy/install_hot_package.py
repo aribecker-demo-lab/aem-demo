@@ -16,6 +16,7 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 AUTHOR = "https://aem-demo-author.onrender.com"
 BASE = "/content/wknd/us/en/aem-demo"
 APP_FILTERS = {
+    "/apps/wknd-demo/components/react-bem-card",
     "/apps/wknd-demo/components/react-index-key",
     "/apps/wknd-demo/components/react-stable-id",
     "/apps/wknd-demo/config/org.apache.sling.commons.log.LogManager.factory.config~wknd-weather.cfg.json",

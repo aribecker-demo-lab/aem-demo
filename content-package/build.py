@@ -16,6 +16,7 @@ ADVENTURES = "/content/wknd/us/en/adventures"
 SOURCE = f"{ADVENTURES}/bali-surf-camp"
 TARGET = f"{ADVENTURES}/bali-surf-camp-demo"
 SECTION_TARGET = f"{ADVENTURES.rsplit('/', 1)[0]}/aem-demo"
+REACT_SECTION = f"{ADVENTURES.rsplit('/', 1)[0]}/react-demo"
 SECTION_IMAGE = "/content/dam/wknd-demo-components.jpg"
 LOGS_SLUG = "system-logs"
 LOGS_COMPONENT = "/apps/wknd-demo/components/system-logs"
@@ -38,6 +39,11 @@ CATALOG_PAGES = (
 REACT_ITEM = ("react-index-issue", "React Index Issue", "",
               "See how React keys affect state when list items move.",
               "Two numbered lists show how a moved row can retain the wrong or correct state.", "")
+BEM_ITEM = ("bem-demo", "BEM Demo", "",
+            "Inspect the CSS classes on a card, its elements and modifiers.",
+            "Two numbered lists on the cover of the React demos", "")
+REACT_COVER = f"{CATALOG_ASSETS}/{REACT_ITEM[0]}.jpg"
+BEM_COMPONENT = "/apps/wknd-demo/components/react-bem-card"
 REACT_COMPONENTS = {
     "index-key": "/apps/wknd-demo/components/react-index-key",
     "stable-id": "/apps/wknd-demo/components/react-stable-id",
@@ -55,6 +61,7 @@ FILTER = f"""<?xml version="1.0" encoding="UTF-8"?>
 <workspaceFilter version="1.0">
     <filter root="{TARGET}" mode="replace"/>
     <filter root="{SECTION_TARGET}" mode="replace"/>
+    <filter root="{REACT_SECTION}" mode="replace"/>
     <filter root="{SECTION_IMAGE}" mode="replace"/>
     <filter root="{CATALOG_ASSETS}" mode="replace"/>
     <filter root="{TEMPLATE_TARGET}" mode="replace"/>
@@ -64,6 +71,7 @@ FILTER = f"""<?xml version="1.0" encoding="UTF-8"?>
     <filter root="{WEATHER_LOG_CONFIG}" mode="replace"/>
     <filter root="{REACT_COMPONENTS['index-key']}" mode="replace"/>
     <filter root="{REACT_COMPONENTS['stable-id']}" mode="replace"/>
+    <filter root="{BEM_COMPONENT}" mode="replace"/>
     <filter root="{DEMO_CLIENTLIB}" mode="replace"/>
 </workspaceFilter>
 """
@@ -711,7 +719,9 @@ SECTION_IMAGE_DEFINITION = """<?xml version="1.0" encoding="UTF-8"?>
 """
 
 
-def build_section(landing_source: bytes) -> bytes:
+def build_section(landing_source: bytes, *, target: str, title: str,
+                  description: str, teaser_title: str, teaser_description: str,
+                  image: str, image_alt: str, slugs: tuple[str, ...]) -> bytes:
     with minidom.parseString(landing_source) as document:
         root = document.documentElement
         page = document.getElementsByTagName("jcr:content")[0]
@@ -723,17 +733,17 @@ def build_section(landing_source: bytes) -> bytes:
                 if node.hasAttribute(key):
                     node.removeAttribute(key)
 
-        page.setAttribute("jcr:title", "AEM Demo")
-        page.setAttribute("navTitle", "AEM Demo")
+        page.setAttribute("jcr:title", title)
+        page.setAttribute("navTitle", title)
         page.setAttribute("hideInNav", "{Boolean}false")
-        page.setAttribute("jcr:description", "Explore the AEM component library.")
+        page.setAttribute("jcr:description", description)
         page.removeAttribute("cq:tags")
 
         teaser = page.getElementsByTagName("teaser")[0]
-        teaser.setAttribute("jcr:title", "Explore AEM components")
-        teaser.setAttribute("jcr:description", "<p>See WKND and Core Components in action.</p>")
-        teaser.setAttribute("fileReference", SECTION_IMAGE)
-        teaser.setAttribute("alt", "Laptop displaying a library of website components")
+        teaser.setAttribute("jcr:title", teaser_title)
+        teaser.setAttribute("jcr:description", f"<p>{escape(teaser_description)}</p>")
+        teaser.setAttribute("fileReference", image)
+        teaser.setAttribute("alt", image_alt)
         teaser.setAttribute("altValueFromDAM", "{Boolean}false")
         teaser.removeChild(teaser.getElementsByTagName("actions")[0])
 
@@ -746,7 +756,7 @@ def build_section(landing_source: bytes) -> bytes:
         listing = next(child for child in tabs.childNodes if child.nodeType == child.ELEMENT_NODE)
         listing.setAttribute("listFrom", "static")
         listing.setAttribute("pages", "[" + ",".join(
-            f"{SECTION_TARGET}/{slug}" for slug in (LOGS_SLUG, *(item[0] for item in CATALOG_PAGES), REACT_ITEM[0])
+            f"{target}/{slug}" for slug in slugs
         ) + "]")
         listing.removeAttribute("orderBy")
         return document.toxml(encoding="UTF-8")
@@ -769,11 +779,15 @@ def build_catalog_page(page_source: bytes, item: tuple[str, ...]) -> bytes:
             if child.nodeType == child.ELEMENT_NODE and (not panel_id or child.getAttribute("id") != panel_id):
                 body.removeChild(child)
 
+        cover_path = {
+            LOGS_SLUG: SECTION_IMAGE,
+            BEM_ITEM[0]: REACT_COVER,
+        }.get(slug, f"{CATALOG_ASSETS}/{slug}.jpg")
         cover = document.createElement("card_image")
         for key, value in {
             "jcr:primaryType": "nt:unstructured",
             "sling:resourceType": "wknd/components/image",
-            "fileReference": SECTION_IMAGE if slug == LOGS_SLUG else f"{CATALOG_ASSETS}/{slug}.jpg",
+            "fileReference": cover_path,
             "alt": alt,
             "altValueFromDAM": "{Boolean}false",
         }.items():
@@ -791,6 +805,11 @@ def build_catalog_page(page_source: bytes, item: tuple[str, ...]) -> bytes:
                 panel.setAttribute("jcr:primaryType", "nt:unstructured")
                 panel.setAttribute("sling:resourceType", path.removeprefix("/apps/"))
                 body.appendChild(panel)
+        if slug == BEM_ITEM[0]:
+            panel = document.createElement("bem_card")
+            panel.setAttribute("jcr:primaryType", "nt:unstructured")
+            panel.setAttribute("sling:resourceType", BEM_COMPONENT.removeprefix("/apps/"))
+            body.appendChild(panel)
         return document.toxml(encoding="UTF-8")
 
 
@@ -912,7 +931,21 @@ def build_package(
         tabs.insertBefore(demo_tab, bring_tab.nextSibling)
         add_demo_components(document)
         page = document.toxml(encoding="UTF-8")
-    section_page = build_section(landing_source)
+    section_page = build_section(
+        landing_source, target=SECTION_TARGET, title="AEM Demo",
+        description="Explore the AEM component library.",
+        teaser_title="Explore AEM components",
+        teaser_description="See WKND and Core Components in action.",
+        image=SECTION_IMAGE, image_alt="Laptop displaying a library of website components",
+        slugs=(LOGS_SLUG, *(item[0] for item in CATALOG_PAGES)),
+    )
+    react_page = build_section(
+        landing_source, target=REACT_SECTION, title="React Demo",
+        description="Explore React list keys and BEM class naming.",
+        teaser_title="Explore React and CSS",
+        teaser_description="Try list reconciliation and inspect the classes behind a BEM card.",
+        image=REACT_COVER, image_alt=REACT_ITEM[4], slugs=(REACT_ITEM[0], BEM_ITEM[0]),
+    )
 
     output.parent.mkdir(parents=True, exist_ok=True)
     with ZipFile(output, "w", compression=ZIP_DEFLATED) as package:
@@ -920,6 +953,7 @@ def build_package(
         package.writestr("META-INF/vault/properties.xml", PROPERTIES)
         package.writestr(f"jcr_root{TARGET}/.content.xml", page)
         package.writestr(f"jcr_root{SECTION_TARGET}/.content.xml", section_page)
+        package.writestr(f"jcr_root{REACT_SECTION}/.content.xml", react_page)
         write_jpeg_asset(package, SECTION_IMAGE, section_image, SECTION_IMAGE_DEFINITION)
         package.writestr(f"jcr_root{CATALOG_ASSETS}/.content.xml",
                          '<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" '
@@ -940,8 +974,11 @@ def build_package(
             write_jpeg_asset(package, f"{CATALOG_ASSETS}/{slug}.jpg",
                              section_image.parent / "catalog-images" / f"{slug}.jpg",
                              asset_definition)
-        package.writestr(f"jcr_root{SECTION_TARGET}/{REACT_ITEM[0]}/.content.xml",
-                         build_catalog_page(page, REACT_ITEM))
+        for item in (REACT_ITEM, BEM_ITEM):
+            package.writestr(f"jcr_root{REACT_SECTION}/{item[0]}/.content.xml",
+                             build_catalog_page(page, item))
+        for source in sorted((react_source / "components/bem-card").iterdir()):
+            package.write(source, f"jcr_root{BEM_COMPONENT}/{source.name}")
         react_cover = SECTION_IMAGE_DEFINITION.replace(
             'dc:title="Illustration of a component library"',
             'dc:title="React Index Issue cover"',

@@ -10,6 +10,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 JCR = "http://www.jcp.org/jcr/1.0"
 APP_ROOTS = (
+    "/apps/wknd-demo/components/react-bem-card",
     "/apps/wknd-demo/components/react-index-key",
     "/apps/wknd-demo/components/react-stable-id",
     "/apps/wknd-demo/config/org.apache.sling.commons.log.LogManager.factory.config~wknd-weather.cfg.json",
@@ -19,6 +20,7 @@ APP_ROOTS = (
 )
 BUNDLE_ROOT = "/apps/wknd-demo/install"
 CONTENT_PREFIXES = (
+    "/content/wknd/us/en/react-demo",
     "/content/wknd/us/en/aem-demo",
     "/content/wknd/us/en/adventures/bali-surf-camp-demo",
     "/conf/wknd/settings/wcm/templates/adventure-page-template-demo",
