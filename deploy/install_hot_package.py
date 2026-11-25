@@ -16,6 +16,7 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 AUTHOR = "https://aem-demo-author.onrender.com"
 BASE = "/content/wknd/us/en/aem-demo"
 APP_FILTERS = {
+    "/apps/wknd-demo/components/react-use-memo",
     "/apps/wknd-demo/components/react-use-callback",
     "/apps/wknd-demo/components/react-bem-card",
     "/apps/wknd-demo/components/react-index-key",
