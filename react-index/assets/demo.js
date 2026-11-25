@@ -17,14 +17,16 @@
         const { createElement: h, useState } = window.React;
         const initial = Array.from({ length: 5 }, (_, index) => ({
             id: "item-" + (index + 1),
-            label: "Elemento número " + ["uno", "dos", "tres", "cuatro", "cinco"][index],
+            label: "Text for item number " + ["one", "two", "three", "four", "five"][index],
         }));
 
-        function Row({ item }) {
+        function Row({ item, index, reactKey }) {
             const [savedLabel] = useState(item.label);
-            return h("li", null,
-                h("strong", null, savedLabel),
-                h("span", null, "Elemento actual del array: " + item.label));
+            return h("tr", null,
+                h("td", null, index),
+                h("td", null, h("code", null, reactKey)),
+                h("td", null, item.label),
+                h("td", null, h("strong", null, savedLabel)));
         }
 
         function ListDemo({ stable }) {
@@ -36,16 +38,22 @@
                 setRevision(value => value + 1);
             };
             return h(window.React.Fragment, null,
-                h("h2", null, stable ? "Clave por ID estable" : "Clave por índice del array"),
+                h("h2", null, stable ? "Stable ID as key" : "Array index as key"),
                 h("p", null, stable
-                    ? "Cada fila conserva su estado al moverse porque su clave pertenece al elemento."
-                    : "El texto en negrita es el estado inicial de la fila. Al mover elementos, React conserva ese estado en la misma posición."),
-                h("button", { type: "button", onClick: rotate }, "Mover el primero al final"),
-                h("button", { type: "button", onClick: reset }, "Restablecer"),
-                h("p", { className: "wknd-react-list-order", "aria-live": "polite" },
-                    "Orden del array: " + items.map(item => item.label).join(" → ")),
-                h("ol", { key: revision }, items.map((item, index) =>
-                    h(Row, { key: stable ? item.id : index, item }))));
+                    ? "The row state follows each item when it moves."
+                    : "After a move, the row state stays at the same index."),
+                h("div", { className: "wknd-react-list-actions" },
+                    h("button", { type: "button", onClick: rotate }, "Move first to end"),
+                    h("button", { type: "button", onClick: reset }, "Reset")),
+                h("div", { className: "wknd-react-list-table" },
+                    h("table", { "aria-label": stable ? "Stable ID keys" : "Array index keys" },
+                        h("thead", null, h("tr", null,
+                            ["Array index", "React key", "Item text", "Row state"].map(label =>
+                                h("th", { key: label, scope: "col" }, label)))),
+                        h("tbody", { key: revision }, items.map((item, index) => {
+                            const reactKey = stable ? item.id : index;
+                            return h(Row, { key: reactKey, item, index, reactKey });
+                        })))));
         }
 
         panels.forEach(panel => {
@@ -57,6 +65,6 @@
         .then(() => load("react-dom.production.min.js"))
         .then(mount)
         .catch(() => {
-            panels.forEach(panel => { panel.querySelector("[role=status]").textContent = "No se pudo cargar React."; });
+            panels.forEach(panel => { panel.querySelector("[role=status]").textContent = "React could not be loaded."; });
         });
 })();
