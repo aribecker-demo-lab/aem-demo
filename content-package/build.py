@@ -1003,6 +1003,12 @@ def build_package(
         assets = react_source / "assets"
         for source in sorted(path for path in assets.rglob("*") if path.is_file()):
             package.write(source, f"{clientlib}/resources/react-index/{source.relative_to(assets).as_posix()}")
+        sass_root = react_source / "sass"
+        sass_sources = [
+            {"path": path.relative_to(sass_root).as_posix(), "contents": path.read_text(encoding="utf-8")}
+            for path in sorted(sass_root.rglob("*.scss"))
+        ]
+        package.writestr(f"{clientlib}/resources/react-index/bem-sass.json", json.dumps(sass_sources))
         package.writestr(f"{clientlib}/.content.xml", DEMO_CLIENTLIB_DEFINITION)
         package.writestr(f"{clientlib}/css.txt", "demo-components.css\n")
         package.writestr(f"{clientlib}/demo-components.css", DEMO_COMPONENTS_CSS)

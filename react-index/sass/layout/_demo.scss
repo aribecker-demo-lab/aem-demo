@@ -1,0 +1,13 @@
+.wknd-bem-demo { padding-block: 1rem; }
+
+.wknd-bem-demo__layout {
+    display: grid;
+    gap: 1.25rem;
+}
+
+@media (min-width: 68rem) {
+    .wknd-bem-demo__layout {
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+        align-items: start;
+    }
+}

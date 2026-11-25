@@ -1,31 +1,48 @@
 <div class="wknd-bem-demo" data-bem-demo>
     <p>BEM names the block, its parts and their variants. Each tag shows the CSS classes on the element next to it.</p>
-    <article class="bem-card bem-card--featured" data-bem-label>
-        <figure class="bem-card__media" data-bem-label>
-            <img class="bem-card__image" data-bem-label
-                src="/content/dam/wknd-demo-catalog/bem-example.jpg"
-                alt="An orange ceramic mug beside a notebook and pencil"
-                width="1536" height="1024" loading="lazy">
-        </figure>
-        <div class="bem-card__body" data-bem-label>
-            <span class="bem-card__badge bem-card__badge--featured" data-bem-label>Featured lesson</span>
-            <h2 class="bem-card__title" data-bem-label>Build a reusable card</h2>
-            <p class="bem-card__description" data-bem-label>Explore a block, its elements and the modifiers that change their appearance.</p>
-            <div class="bem-card__actions" data-bem-label>
-                <div>
-                    <button class="bem-card__button bem-card__button--primary" data-bem-label
-                        data-bem-toggle type="button" aria-expanded="false">Show details</button>
+    <div class="wknd-bem-demo__layout">
+        <div>
+            <article class="bem-card bem-card--featured" data-bem-label>
+                <figure class="bem-card__media" data-bem-label>
+                    <img class="bem-card__image" data-bem-label
+                        src="/content/dam/wknd-demo-catalog/bem-example.jpg"
+                        alt="An orange ceramic mug beside a notebook and pencil"
+                        width="1536" height="1024" loading="lazy">
+                </figure>
+                <div class="bem-card__body" data-bem-label>
+                    <span class="bem-card__badge bem-card__badge--featured" data-bem-label>Featured lesson</span>
+                    <h2 class="bem-card__title" data-bem-label>Build a reusable card</h2>
+                    <p class="bem-card__description" data-bem-label>Explore a block, its elements and the modifiers that change their appearance.</p>
+                    <div class="bem-card__actions" data-bem-label>
+                        <div>
+                            <button class="bem-card__button bem-card__button--primary" data-bem-label
+                                data-bem-toggle type="button" aria-expanded="false">Show details</button>
+                        </div>
+                        <div>
+                            <a class="bem-card__button bem-card__button--secondary" data-bem-label
+                                href="/content/wknd/us/en/react-demo/react-index-issue.html">React keys demo</a>
+                        </div>
+                    </div>
+                    <div class="bem-card__details" data-bem-label data-bem-details hidden>
+                        <p><code>.bem-card--expanded</code> is added to the card while this panel is open.</p>
+                    </div>
                 </div>
-                <div>
-                    <a class="bem-card__button bem-card__button--secondary" data-bem-label
-                        href="/content/wknd/us/en/react-demo/react-index-issue.html">React keys demo</a>
-                </div>
-            </div>
-            <div class="bem-card__details" data-bem-label data-bem-details hidden>
-                <p><code>.bem-card--expanded</code> is added to the card while this panel is open.</p>
-            </div>
+            </article>
         </div>
-    </article>
+        <aside class="wknd-bem-demo__explorer" aria-label="Sass 7–1 architecture">
+            <h3>Sass 7–1 architecture</h3>
+            <p>Seven folders and one entry point. Open a file to see the source that compiles to <code>bem.css</code>.</p>
+            <div class="wknd-bem-demo__theme">
+                <label>Preview theme
+                    <select data-bem-theme-select>
+                        <option value="default">Default</option>
+                        <option value="warm">Warm</option>
+                    </select>
+                </label>
+            </div>
+            <div data-bem-sass-files><p role="status">Loading Sass files…</p></div>
+        </aside>
+    </div>
 </div>
-<link rel="stylesheet" href="/etc.clientlibs/wknd/clientlibs/clientlib-demo-components/resources/react-index/bem.css">
-<script defer src="/etc.clientlibs/wknd/clientlibs/clientlib-demo-components/resources/react-index/bem.js"></script>
+<link rel="stylesheet" href="/etc.clientlibs/wknd/clientlibs/clientlib-demo-components/resources/react-index/bem.css?v=2">
+<script defer src="/etc.clientlibs/wknd/clientlibs/clientlib-demo-components/resources/react-index/bem.js?v=2"></script>

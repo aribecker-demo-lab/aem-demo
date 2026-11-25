@@ -1,0 +1,9 @@
+@use "../abstracts/tokens";
+
+.wknd-bem-demo {
+    --bem-ink: #{tokens.$ink};
+    --bem-accent: #{tokens.$accent};
+    color: var(--bem-ink);
+}
+
+.wknd-bem-demo [hidden] { display: none; }

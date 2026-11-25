@@ -1,0 +1,10 @@
+.wknd-bem-demo {
+    --bem-card-surface: #f8fafc;
+    --bem-card-expanded: #eef3ff;
+}
+
+.wknd-bem-demo[data-bem-theme="warm"] {
+    --bem-accent: #855316;
+    --bem-card-surface: #fff8ed;
+    --bem-card-expanded: #fcebd4;
+}

@@ -1,0 +1,44 @@
+@use "../abstracts/tokens";
+
+.bem-card {
+    padding: clamp(.75rem, 2.5vw, 1.5rem);
+    border: 1px solid tokens.$border;
+    border-radius: tokens.$radius;
+    background: var(--bem-card-surface);
+}
+
+.bem-card--featured { border-top: .3rem solid var(--bem-accent); }
+.bem-card--expanded { background: var(--bem-card-expanded); }
+.bem-card__media, .bem-card__body { margin: 0 0 .75rem; }
+
+.bem-card__image {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-width: 38rem;
+    border-radius: .35rem;
+}
+
+.bem-card__body {
+    padding: .75rem;
+    border: 1px dashed #96a8cd;
+    border-radius: .35rem;
+}
+
+.bem-card__title, .bem-card__description { margin-block: .15rem .65rem; }
+.bem-card__badge { display: inline-block; padding: .12rem .4rem; border-radius: .2rem; }
+.bem-card__badge--featured { background: #e5f4eb; color: #185435; }
+.bem-card__actions { display: flex; flex-wrap: wrap; gap: .6rem 1rem; margin-bottom: .5rem; }
+
+.bem-card__button {
+    display: inline-block;
+    padding: .35rem .65rem;
+    border: 1px solid var(--bem-accent);
+    border-radius: .25rem;
+    cursor: pointer;
+}
+
+.bem-card__button--primary { background: var(--bem-accent); color: white; }
+.bem-card__button--secondary { background: white; color: #243c75; }
+.bem-card__details { padding: .45rem .6rem; background: white; }
+.bem-card__details p { margin: 0; }

@@ -1,0 +1,5 @@
+// Bridge WKND's global button styles into the scoped demo.
+.wknd-bem-demo .bem-card__button {
+    font: inherit;
+    text-transform: none;
+}

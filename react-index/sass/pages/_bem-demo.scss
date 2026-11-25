@@ -1,0 +1,31 @@
+.wknd-bem-demo .wknd-bem-label {
+    display: table;
+    margin: .15rem 0 .2rem;
+    padding: .1rem .35rem;
+    background: #e8efff;
+    color: #243c75;
+    border-left: 2px solid #738bc3;
+    border-radius: .2rem;
+    font-size: .75rem;
+    overflow-wrap: anywhere;
+}
+
+.wknd-bem-demo__explorer {
+    min-inline-size: 0;
+    border: 1px solid #cbd5e7;
+    border-radius: .6rem;
+    padding: .8rem;
+}
+
+.wknd-bem-demo__explorer h3 { margin-block: 0 .45rem; }
+.wknd-bem-demo__explorer details { margin-block: .4rem; }
+.wknd-bem-demo__explorer summary { cursor: pointer; }
+.wknd-bem-demo__explorer pre {
+    max-height: 19rem;
+    overflow: auto;
+    padding: .55rem;
+    background: #eef2f7;
+    font-size: .78rem;
+}
+
+.wknd-bem-demo__theme { margin-block: .5rem; }
