@@ -17,6 +17,9 @@ MESSAGES = (
     (re.compile(r"successfully pushed|image push.*complete"), "Image", "Pushing", "Published", "Image published"),
     (re.compile(r"\bdeploying\b"), "Service", "Building", "Deploying", "Render started the rollout"),
     (re.compile(r"service is live|service is now live"), "Service", "Deploying", "Live", "Render announced that the service was live"),
+    (re.compile(r"instance srv-[a-z0-9-]+ restarted"), "Instance", "Stopped", "Restarted", "Render restarted the instance"),
+    (re.compile(r"java vm is shutting down"), "AEM", "Running", "Stopping", "AEM reported JVM shutdown"),
+    (re.compile(r"unable to get component.*linkchecker"), "AEM HTML", "Starting", "Unavailable", "Sling Link Checker transformer unavailable"),
     (re.compile(r"startup completed|startup complete"), "AEM", "Starting", "Started", "AEM reported startup complete"),
     (re.compile(r"launching .*aem|starting .*quickstart|starting apache sling"), "AEM", "Pending", "Starting", "AEM launcher started"),
 )
@@ -31,20 +34,28 @@ def timeline(deploy, logs):
         raise ValueError("The Render deployment must be live.")
     rows = set()
 
-    def add(timestamp, kind, entity, before, after, detail):
+    def add(timestamp, kind, entity, before, after, detail, identity=deploy_id):
         datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
-        rows.add((timestamp, kind, entity, deploy_id, commit, before, after, detail))
+        rows.add((timestamp, kind, entity, identity, commit, before, after, detail))
 
     add(deploy["createdAt"], "Render", "Deployment", "—", "Requested", "Render deployment created")
     if deploy.get("startedAt"):
         add(deploy["startedAt"], "Render", "Deployment", "Requested", "In progress", "Render deployment started")
     add(deploy["finishedAt"], "Render", "Deployment", "In progress", "Live", "Render marked the deployment live")
+    seen = set()
     for log in logs:
         message = ANSI.sub("", log["message"]).lower()
         for pattern, entity, before, after, detail in MESSAGES:
             if pattern.search(message):
-                kind = "Runtime" if entity == "AEM" else "Docker" if entity == "Image" else "Render"
-                add(log["timestamp"], kind, entity, before, after, detail)
+                kind = "Runtime" if entity.startswith("AEM") else "Docker" if entity == "Image" else "Render"
+                key = (detail, log["timestamp"][:16])
+                if key not in seen:
+                    instance = log.get("instance") or next(
+                        (label["value"] for label in log.get("labels", []) if label["name"] == "instance"), "")
+                    if not re.fullmatch(r"srv-[a-z0-9-]+", instance):
+                        instance = deploy_id
+                    add(log["timestamp"], kind, entity, before, after, detail, instance)
+                    seen.add(key)
                 break
     return "\n".join("\t".join(row) for row in sorted(rows)) + "\n"
 

@@ -47,7 +47,7 @@ def deploy_logs(service, owner, deploy):
              ("type", "app"), ("type", "build")]
     start = deploy["startedAt"]
     end = datetime.fromisoformat(deploy["finishedAt"])
-    end = min(end + timedelta(seconds=5), datetime.now(end.tzinfo)).isoformat()
+    end = min(end + timedelta(minutes=12), datetime.now(end.tzinfo)).isoformat()
     for _ in range(25):
         data = render("/logs", query + [("startTime", start), ("endTime", end)])
         yield from data["logs"]
