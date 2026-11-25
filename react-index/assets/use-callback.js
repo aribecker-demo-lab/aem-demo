@@ -1,6 +1,15 @@
 (() => {
     const { createElement: h, memo, useCallback, useLayoutEffect, useRef, useState } = window.React;
 
+    function pulseBackground(element, pulse, color) {
+        pulse.current?.cancel();
+        if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            pulse.current = element.animate(
+                [{ backgroundColor: color }, { backgroundColor: "transparent" }],
+                { duration: 450, easing: "ease-out" });
+        }
+    }
+
     const CounterChild = memo(function CounterChild({ onIncrement }) {
         const figures = useRef({ references: new WeakSet(), distinct: 0, renders: 0 });
         const references = useRef(null);
@@ -19,12 +28,7 @@
             counter.textContent = stats.renders + " child renders";
             if (stats.renders > 1) {
                 counter.classList.add("wknd-callback__renders--increased");
-                pulse.current?.cancel();
-                if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-                    pulse.current = counter.animate(
-                        [{ backgroundColor: "#ff9ca8" }, { backgroundColor: "transparent" }],
-                        { duration: 450, easing: "ease-out" });
-                }
+                pulseBackground(counter, pulse, "#ff9ca8");
             }
         });
 
@@ -36,10 +40,21 @@
     });
 
     function CounterPanel({ title, count, onIncrement }) {
+        const counter = useRef(null);
+        const pulse = useRef(null);
+
+        useLayoutEffect(() => {
+            if (count > 0) pulseBackground(counter.current, pulse, "#a4e8bb");
+        }, [count]);
+
         return h("section", { "aria-label": title },
             h("h2", null, title),
             h("p", { className: "wknd-callback__count" },
-                "Count: ", h("strong", { "data-parent-count": true }, count)),
+                h("span", {
+                    ref: counter,
+                    className: count > 0 ? "wknd-callback__count-value wknd-callback__count-value--increased" :
+                        "wknd-callback__count-value",
+                }, "Count: ", h("strong", { "data-parent-count": true }, count))),
             h(CounterChild, { onIncrement }));
     }
 

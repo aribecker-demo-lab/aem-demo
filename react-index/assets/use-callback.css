@@ -23,3 +23,10 @@
     color: #9b1c31;
     font-weight: 700;
 }
+
+.wknd-callback__count-value {
+    padding-inline: .2rem;
+    border-radius: .2rem;
+}
+
+.wknd-callback__count-value--increased { color: #175c35; }
