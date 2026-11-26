@@ -12,12 +12,18 @@
         }
     }
 
+    // memo skips re-rendering this child when its callback prop keeps the same reference.
     const CounterChild = memo(function CounterChild({ onIncrement }) {
+        // useRef retains the metrics across renders. Updating them does not trigger another render.
         const figures = useRef({ references: new WeakSet(), distinct: 0, renders: 0 });
+        // useRef holds the DOM node that displays how many callback references the child received.
         const references = useRef(null);
+        // useRef holds the DOM node that displays the number of committed child renders.
         const renders = useRef(null);
+        // useRef retains the current animation so a new increment can restart the pulse.
         const pulse = useRef(null);
 
+        // useLayoutEffect updates the metrics after each child commit, before the browser paints.
         useLayoutEffect(() => {
             const stats = figures.current;
             stats.renders += 1;
@@ -69,9 +75,12 @@
     }
 
     function CounterPanel({ title, count, onIncrement, example }) {
+        // useRef gives the effect access to the count label for the green pulse.
         const counter = useRef(null);
+        // useRef retains the current animation so a new increment can restart the pulse.
         const pulse = useRef(null);
 
+        // useLayoutEffect starts the green pulse before paint when this panel’s count changes.
         useLayoutEffect(() => {
             if (count > 0) pulseBackground(counter.current, pulse, "#a4e8bb");
         }, [count]);
@@ -91,7 +100,9 @@
     }
 
     function WithoutCallback() {
+        // useState stores this panel’s independent count and schedules a render when it changes.
         const [count, setCount] = useState(0);
+        // Left version without useCallback. A fresh function reference reaches the memoized child on every render.
         const onIncrement = () => setCount(value => value + 1);
         return h(CounterPanel, { title: "Without useCallback", count, onIncrement, example: `function WithoutCallback() {
   const [count, setCount] = useState(0);
@@ -107,7 +118,9 @@
     }
 
     function WithCallback() {
+        // useState stores this panel’s independent count and schedules a render when it changes.
         const [count, setCount] = useState(0);
+        // Right version with useCallback. React reuses the reference. The updater reads the latest count, so [] is enough.
         const onIncrement = useCallback(() => setCount(value => value + 1), []);
         return h(CounterPanel, { title: "With useCallback", count, onIncrement, example: `function WithCallback() {
   const [count, setCount] = useState(0);
@@ -123,9 +136,12 @@
     }
 
     function FullSource() {
+        // useState stores the JavaScript fetched for the complete source viewer.
         const [source, setSource] = useState("");
+        // useState records a fetch failure so the viewer can display an error message.
         const [error, setError] = useState(false);
 
+        // useEffect fetches the deployed source after mount and cancels the request on unmount.
         useEffect(() => {
             const request = new AbortController();
             fetch(sourceUrl, { signal: request.signal })
@@ -159,6 +175,7 @@
 
     document.querySelectorAll("[data-use-callback-demo]:not([data-use-callback-ready])").forEach(panel => {
         panel.dataset.useCallbackReady = "true";
+        // createRoot creates a React root in the AEM container. render mounts the comparison there.
         window.ReactDOM.createRoot(panel).render(h(Comparison));
     });
 })();
