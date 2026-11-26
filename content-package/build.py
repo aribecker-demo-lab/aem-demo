@@ -51,7 +51,7 @@ MEMO_ITEM = ("use-memo-demo", "useMemo Demo", "",
 MEMO_COMPONENT = "/apps/wknd-demo/components/react-use-memo"
 REACT_MEMO_ITEM = ("react-memo-demo", "React.memo Demo", "",
                    "Compare child renders when the parent updates and when a prop changes.",
-                   "A cyan React atom surrounded by interface components", "")
+                   "A child skips rendering with unchanged props and renders when a prop changes", "")
 REACT_MEMO_COMPONENT = "/apps/wknd-demo/components/react-memo"
 CALLBACK_COMPONENT = "/apps/wknd-demo/components/react-use-callback"
 BEM_COMPONENT = "/apps/wknd-demo/components/react-bem-card"
@@ -796,7 +796,6 @@ def build_catalog_page(page_source: bytes, item: tuple[str, ...]) -> bytes:
         cover_path = {
             LOGS_SLUG: SECTION_IMAGE,
             MEMO_ITEM[0]: f"{CATALOG_ASSETS}/react-demo.jpg",
-            REACT_MEMO_ITEM[0]: f"{CATALOG_ASSETS}/react-demo.jpg",
         }.get(slug, f"{CATALOG_ASSETS}/{slug}.jpg")
         cover = document.createElement("card_image")
         for key, value in {
@@ -1019,6 +1018,7 @@ def build_package(
             ("react-demo", "react-demo-cover.jpg", "React Demo cover"),
             ("bem-example", "bem-example.jpg", "BEM card example image"),
             (CALLBACK_ITEM[0], "use-callback-cover.jpg", "useCallback Demo cover"),
+            (REACT_MEMO_ITEM[0], "react-memo-cover.jpg", "React.memo Demo cover"),
         ):
             definition = SECTION_IMAGE_DEFINITION.replace(
                 'dc:title="Illustration of a component library"', f'dc:title="{title}"',
