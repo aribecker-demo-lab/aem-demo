@@ -55,7 +55,7 @@ REACT_MEMO_ITEM = ("react-memo-demo", "React.memo Demo", "",
 REACT_MEMO_COMPONENT = "/apps/wknd-demo/components/react-memo"
 TRACE_ITEM = ("render-trace-demo", "React Render Trace", "",
               "Follow a React state update from the click to the DOM and browser frames.",
-              "A cyan React atom surrounded by interface components", "")
+              "A click flows through a component tree to an updated browser window", "")
 TRACE_COMPONENT = "/apps/wknd-demo/components/render-trace"
 CALLBACK_COMPONENT = "/apps/wknd-demo/components/react-use-callback"
 BEM_COMPONENT = "/apps/wknd-demo/components/react-bem-card"
@@ -801,7 +801,6 @@ def build_catalog_page(page_source: bytes, item: tuple[str, ...]) -> bytes:
         cover_path = {
             LOGS_SLUG: SECTION_IMAGE,
             MEMO_ITEM[0]: f"{CATALOG_ASSETS}/react-demo.jpg",
-            TRACE_ITEM[0]: f"{CATALOG_ASSETS}/react-demo.jpg",
         }.get(slug, f"{CATALOG_ASSETS}/{slug}.jpg")
         cover = document.createElement("card_image")
         for key, value in {
@@ -1027,6 +1026,7 @@ def build_package(
             ("bem-example", "bem-example.jpg", "BEM card example image"),
             (CALLBACK_ITEM[0], "use-callback-cover.jpg", "useCallback Demo cover"),
             (REACT_MEMO_ITEM[0], "react-memo-cover.jpg", "React.memo Demo cover"),
+            (TRACE_ITEM[0], "render-trace-cover.jpg", "React Render Trace cover"),
         ):
             definition = SECTION_IMAGE_DEFINITION.replace(
                 'dc:title="Illustration of a component library"', f'dc:title="{title}"',

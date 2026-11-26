@@ -1,6 +1,62 @@
 <section class="wknd-react-list" data-render-trace-demo>
     <p role="status">Loading the React comparison…</p>
 </section>
+<article>
+    <h2>From the first mount to the next update</h2>
+
+    <h3>1. Create the root and describe the first screen</h3>
+    <p>AEM serves an HTML container. The script calls <code>createRoot</code> on that container and
+        <code>root.render</code> with a React element describing the counter and the log. A React element
+        is a JavaScript description of what to show. JSX is one way to write that description.
+        It contains a type, props and children. These descriptions are often called the virtual DOM.</p>
+    <p>React calls the counter with its <code>label</code> and <code>trace</code> props. On this first mount,
+        <code>useState(0)</code> initializes <code>value</code> to <code>0</code> and returns a setter.
+        <code>useRef(null)</code> creates a stable object whose <code>current</code> will later hold the
+        output node. The counter returns an element tree for its label, output and button.</p>
+
+    <h3>2. Reconcile and commit the initial screen</h3>
+    <p>During the render phase, React reconciles the element descriptions with its internal Fiber tree.
+        A Fiber tracks a piece of the mounted UI, its state and pending work. On the first mount there
+        is no previous counter subtree to reuse. React prepares the corresponding browser DOM nodes.
+        Render work can be interrupted, restarted or discarded before it is committed, so the
+        component function should stay pure.</p>
+    <p>During the commit, React inserts the nodes into the container and attaches the DOM ref.
+        <code>useLayoutEffect</code> can now read the actual <code>0</code> before the browser paints the
+        committed update. <code>useEffect</code> runs after the commit. Depending on scheduling, it
+        may run before or after the browser has painted.</p>
+
+    <h3>3. Click and queue a state update</h3>
+    <p>The browser dispatches a click and React calls the handler associated with the button.
+        That handler sees the state snapshot from the render that created it, so the first click
+        sees <code>value = 0</code>. Calling <code>setValue(previous =&gt; previous + 1)</code> queues an
+        updater. It does not overwrite the local <code>value</code> in that handler. React can batch
+        updates and applies functional updaters in order to the pending state.</p>
+
+    <h3>4. Render again and determine what changes</h3>
+    <p>When React processes the update, the updater produces <code>1</code> and React calls the
+        counter again with that state. The incoming props stay the same. If the counter passed
+        <code>value</code> to a child, the child would receive it as a new prop on that render.
+        The counter now describes an <code>&lt;output&gt;1&lt;/output&gt;</code> in the same position
+        as the previous output. React matches children by type and position or key as applicable.
+        It can preserve the output node and update its text.</p>
+
+    <h3>5. Commit, run effects and give the browser a chance to paint</h3>
+    <p>React commits the text change to the real DOM. The layout effect reads <code>1</code> and
+        compares the current DOM reference with the previous one. The ordinary effect then runs
+        for the committed value. The browser can recalculate styles and layout as needed, paint,
+        and composite what appears on screen. A <code>requestAnimationFrame</code> callback runs
+        before a repaint. The next callback indicates a frame opportunity, without measuring
+        whether the pixels were actually painted.</p>
+
+    <h3>How to read the event log</h3>
+    <p><strong>Click</strong> and <strong>Update requested</strong> are recorded in the handler.
+        <strong>Render result</strong> and <strong>React element</strong> describe the render that
+        reached the commit. <strong>Commit / DOM</strong> records the actual DOM text and whether
+        the node was reused. The effects and frame callbacks add their own entries. The log
+        subscribes separately from the counter, so recording an entry does not update the counter’s
+        state. The timestamps show observations in this demo. React’s individual Fiber comparisons
+        and discarded render attempts are internal and are not recorded here.</p>
+</article>
 <link rel="stylesheet" href="/etc.clientlibs/wknd/clientlibs/clientlib-demo-components/resources/react-index/demo.css?v=3">
 <link rel="stylesheet" href="/etc.clientlibs/wknd/clientlibs/clientlib-demo-components/resources/react-index/render-trace.css">
 <script defer src="/etc.clientlibs/wknd/clientlibs/clientlib-demo-components/resources/react-index/vendor/react.production.min.js"></script>
