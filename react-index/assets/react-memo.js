@@ -1,16 +1,31 @@
 (() => {
     const { createElement: h, memo, useLayoutEffect, useRef, useState } = window.React;
 
-    function Child({ value }) {
+    function Child({ value, optimized }) {
         const renders = useRef(0);
         const output = useRef(null);
+        const indicator = useRef(null);
+        const pulse = useRef(null);
         useLayoutEffect(() => {
             renders.current += 1;
             output.current.textContent = renders.current;
+            if (renders.current > 1) {
+                const badge = indicator.current;
+                badge.classList.add(optimized ? "wknd-callback__count-value--increased" :
+                    "wknd-callback__renders--increased");
+                pulse.current?.cancel();
+                if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+                    pulse.current = badge.animate([
+                        { backgroundColor: optimized ? "#a4e8bb" : "#ff9ca8" },
+                        { backgroundColor: "transparent" },
+                    ], { duration: 450, easing: "ease-out" });
+                }
+            }
         });
         return h("div", null,
             h("p", null, "Child prop (value): ", h("strong", null, value)),
-            h("p", null, "Child renders: ", h("output", { ref: output, "aria-live": "polite" })));
+            h("p", null, h("span", { ref: indicator, className: "wknd-callback__renders" },
+                "Child renders: ", h("output", { ref: output, "aria-live": "polite" }))));
     }
 
     const MemoChild = memo(Child);
@@ -27,7 +42,7 @@
             h("button", { type: "button", onClick: () => setParentUpdates(n => n + 1) }, "Update parent only"),
             " ",
             h("button", { type: "button", onClick: () => setValue(n => n + 1) }, "Increment child prop"),
-            h(ChildComponent, { value }),
+            h(ChildComponent, { value, optimized }),
             h("h3", { className: "wknd-callback__code-title" }, "JSX comparison"),
             h("pre", { className: "wknd-callback__code", tabIndex: 0 },
                 h("code", null,
