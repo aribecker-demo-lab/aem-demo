@@ -23,7 +23,8 @@
             output.current.textContent = renders.current;
             if (renders.current > 1) flash(indicator.current, pulse, optimized);
         });
-        return h("div", null,
+        return h("div", { className: "wknd-memo__child" },
+            h("h3", null, "Child component"),
             h("p", null, "Child prop (value): ", h("strong", null, value)),
             h("p", null, h("span", { ref: indicator, className: "wknd-callback__renders" },
                 "Child renders: ", h("output", { ref: output, "aria-live": "polite" }))));
@@ -44,11 +45,13 @@
 
         return h("section", { "aria-label": title },
             h("h2", null, title),
-            h("p", null, h("span", { ref: parentIndicator, className: "wknd-callback__renders" },
-                "Parent-only updates: ", h("strong", { "data-parent-updates": true }, parentUpdates))),
-            h("button", { type: "button", onClick: () => setParentUpdates(n => n + 1) }, "Increment parent property only"),
-            " ",
-            h("button", { type: "button", onClick: () => setValue(n => n + 1) }, "Increment child prop"),
+            h("div", { className: "wknd-memo__parent" },
+                h("h3", null, "Parent component"),
+                h("p", null, h("span", { ref: parentIndicator, className: "wknd-callback__renders" },
+                    "Parent-only updates: ", h("strong", { "data-parent-updates": true }, parentUpdates))),
+                h("button", { type: "button", onClick: () => setParentUpdates(n => n + 1) }, "Increment parent property only"),
+                " ",
+                h("button", { type: "button", onClick: () => setValue(n => n + 1) }, "Increment child prop")),
             h(ChildComponent, { value, optimized }),
             h("h3", { className: "wknd-callback__code-title" }, "JSX comparison"),
             h("pre", { className: "wknd-callback__code", tabIndex: 0 },
