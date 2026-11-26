@@ -1,6 +1,18 @@
 (() => {
     const { createElement: h, memo, useLayoutEffect, useRef, useState } = window.React;
 
+    function flash(badge, pulse, green = false) {
+        badge.classList.add(green ? "wknd-callback__count-value--increased" :
+            "wknd-callback__renders--increased");
+        pulse.current?.cancel();
+        if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            pulse.current = badge.animate([
+                { backgroundColor: green ? "#a4e8bb" : "#ff9ca8" },
+                { backgroundColor: "transparent" },
+            ], { duration: 450, easing: "ease-out" });
+        }
+    }
+
     function Child({ value, optimized }) {
         const renders = useRef(0);
         const output = useRef(null);
@@ -9,18 +21,7 @@
         useLayoutEffect(() => {
             renders.current += 1;
             output.current.textContent = renders.current;
-            if (renders.current > 1) {
-                const badge = indicator.current;
-                badge.classList.add(optimized ? "wknd-callback__count-value--increased" :
-                    "wknd-callback__renders--increased");
-                pulse.current?.cancel();
-                if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-                    pulse.current = badge.animate([
-                        { backgroundColor: optimized ? "#a4e8bb" : "#ff9ca8" },
-                        { backgroundColor: "transparent" },
-                    ], { duration: 450, easing: "ease-out" });
-                }
-            }
+            if (renders.current > 1) flash(indicator.current, pulse, optimized);
         });
         return h("div", null,
             h("p", null, "Child prop (value): ", h("strong", null, value)),
@@ -33,13 +34,19 @@
     function Example({ optimized }) {
         const [parentUpdates, setParentUpdates] = useState(0);
         const [value, setValue] = useState(0);
+        const parentIndicator = useRef(null);
+        const parentPulse = useRef(null);
+        useLayoutEffect(() => {
+            if (parentUpdates > 0) flash(parentIndicator.current, parentPulse);
+        }, [parentUpdates]);
         const title = optimized ? "With React.memo" : "Without React.memo";
         const ChildComponent = optimized ? MemoChild : Child;
 
         return h("section", { "aria-label": title },
             h("h2", null, title),
-            h("p", null, "Parent-only updates: ", h("strong", { "data-parent-updates": true }, parentUpdates)),
-            h("button", { type: "button", onClick: () => setParentUpdates(n => n + 1) }, "Update parent only"),
+            h("p", null, h("span", { ref: parentIndicator, className: "wknd-callback__renders" },
+                "Parent-only updates: ", h("strong", { "data-parent-updates": true }, parentUpdates))),
+            h("button", { type: "button", onClick: () => setParentUpdates(n => n + 1) }, "Increment parent property only"),
             " ",
             h("button", { type: "button", onClick: () => setValue(n => n + 1) }, "Increment child prop"),
             h(ChildComponent, { value, optimized }),
