@@ -58,3 +58,8 @@
 .wknd-callback__token--number { color: #784015; }
 .wknd-callback__token--operator { color: #62417f; }
 .wknd-callback__token--hook { color: #0c5431; font-weight: 800; }
+
+.wknd-callback__full-source { margin-block-start: 1.25rem; }
+.wknd-callback__full-source .wknd-callback__code { max-height: 36rem; }
+.wknd-callback__token--string { color: #8c3c18; }
+.wknd-callback__token--comment { color: #4c6057; font-style: italic; }

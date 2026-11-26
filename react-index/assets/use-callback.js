@@ -1,5 +1,7 @@
 (() => {
-    const { createElement: h, memo, useCallback, useLayoutEffect, useRef, useState } = window.React;
+    const { createElement: h, memo, useCallback, useEffect, useLayoutEffect, useRef, useState } = window.React;
+
+    const sourceUrl = document.currentScript.src;
 
     function pulseBackground(element, pulse, color) {
         pulse.current?.cancel();
@@ -43,8 +45,8 @@
   return <button onClick={onIncrement}>Increment</button>;
 });`;
 
-    function highlightJsx(source) {
-        const tokens = /(<\/?[A-Za-z][\w]*|\b(?:const|function|return)\b|\b(?:memo|useState|useCallback|setCount)\b|\b\d+\b|=>)/g;
+    function highlightSource(source) {
+        const tokens = /("(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/[^\n]*|<\/?[A-Za-z][\w]*|\b(?:const|function|return|if|else|new|let|null|true|false|throw)\b|\b(?:memo|useState|useCallback|useEffect|useLayoutEffect|useRef|setCount|createRoot)\b|\b\d+\b|=>)/g;
         return source.split("\n").map((line, index) => {
             const changed = line.trimStart().startsWith("const onIncrement =");
             const variant = line.includes("useCallback(") ? "hook" : "direct";
@@ -55,7 +57,9 @@
                 if (tokenIndex % 2 === 0) return part;
                 let kind = "call";
                 if (part.startsWith("<")) kind = "tag";
-                else if (/^(const|function|return)$/.test(part)) kind = "keyword";
+                else if (part.startsWith("//")) kind = "comment";
+                else if (part.startsWith('"') || part.startsWith("'")) kind = "string";
+                else if (/^(const|function|return|if|else|new|let|null|true|false|throw)$/.test(part)) kind = "keyword";
                 else if (/^\d+$/.test(part)) kind = "number";
                 else if (part === "=>") kind = "operator";
                 else if (part === "useCallback") kind = "hook";
@@ -83,7 +87,7 @@
             h(CounterChild, { onIncrement }),
             h("h3", { className: "wknd-callback__code-title" }, "Functional JSX"),
             h("pre", { className: "wknd-callback__code", tabIndex: 0 },
-                h("code", null, highlightJsx(example + "\n\n" + childExample))));
+                h("code", null, highlightSource(example + "\n\n" + childExample))));
     }
 
     function WithoutCallback() {
@@ -118,11 +122,39 @@
 }` });
     }
 
+    function FullSource() {
+        const [source, setSource] = useState("");
+        const [error, setError] = useState(false);
+
+        useEffect(() => {
+            const request = new AbortController();
+            fetch(sourceUrl, { signal: request.signal })
+                .then(response => {
+                    if (!response.ok) throw new Error("Source unavailable");
+                    return response.text();
+                })
+                .then(setSource)
+                .catch(() => {
+                    if (!request.signal.aborted) setError(true);
+                });
+            return () => request.abort();
+        }, []);
+
+        return h("section", { className: "wknd-callback__full-source" },
+            h("h2", null, "Complete JavaScript"),
+            h("p", null, "The full component source, including render tracking, visual feedback and initialization."),
+            source
+                ? h("pre", { className: "wknd-callback__code", tabIndex: 0 },
+                    h("code", null, highlightSource(source.trimEnd())))
+                : h("p", { role: "status" }, error ? "The source could not be loaded." : "Loading source…"));
+    }
+
     function Comparison() {
         return h(window.React.Fragment, null,
             h("p", null, "Each button increments the counter in its own example. Each memoized child receives only its callback."),
             h("div", { className: "wknd-callback__grid" }, h(WithoutCallback), h(WithCallback)),
-            h("p", null, "The reference and render counters include the initial render."));
+            h("p", null, "The reference and render counters include the initial render."),
+            h(FullSource));
     }
 
     document.querySelectorAll("[data-use-callback-demo]:not([data-use-callback-ready])").forEach(panel => {
