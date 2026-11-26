@@ -49,6 +49,10 @@ MEMO_ITEM = ("use-memo-demo", "useMemo Demo", "",
              "Compare filtered results with and without memoization.",
              "A cyan React atom surrounded by interface components", "")
 MEMO_COMPONENT = "/apps/wknd-demo/components/react-use-memo"
+REACT_MEMO_ITEM = ("react-memo-demo", "React.memo Demo", "",
+                   "Compare child renders when the parent updates and when a prop changes.",
+                   "A cyan React atom surrounded by interface components", "")
+REACT_MEMO_COMPONENT = "/apps/wknd-demo/components/react-memo"
 CALLBACK_COMPONENT = "/apps/wknd-demo/components/react-use-callback"
 BEM_COMPONENT = "/apps/wknd-demo/components/react-bem-card"
 REACT_COMPONENTS = {
@@ -81,6 +85,7 @@ FILTER = f"""<?xml version="1.0" encoding="UTF-8"?>
     <filter root="{BEM_COMPONENT}" mode="replace"/>
     <filter root="{CALLBACK_COMPONENT}" mode="replace"/>
     <filter root="{MEMO_COMPONENT}" mode="replace"/>
+    <filter root="{REACT_MEMO_COMPONENT}" mode="replace"/>
     <filter root="{DEMO_CLIENTLIB}" mode="replace"/>
 </workspaceFilter>
 """
@@ -791,6 +796,7 @@ def build_catalog_page(page_source: bytes, item: tuple[str, ...]) -> bytes:
         cover_path = {
             LOGS_SLUG: SECTION_IMAGE,
             MEMO_ITEM[0]: f"{CATALOG_ASSETS}/react-demo.jpg",
+            REACT_MEMO_ITEM[0]: f"{CATALOG_ASSETS}/react-demo.jpg",
         }.get(slug, f"{CATALOG_ASSETS}/{slug}.jpg")
         cover = document.createElement("card_image")
         for key, value in {
@@ -818,6 +824,7 @@ def build_catalog_page(page_source: bytes, item: tuple[str, ...]) -> bytes:
             BEM_ITEM[0]: ("bem_card", BEM_COMPONENT),
             CALLBACK_ITEM[0]: ("use_callback", CALLBACK_COMPONENT),
             MEMO_ITEM[0]: ("use_memo", MEMO_COMPONENT),
+            REACT_MEMO_ITEM[0]: ("react_memo", REACT_MEMO_COMPONENT),
         }
         if slug in demo_panels:
             name, component_root = demo_panels[slug]
@@ -960,7 +967,7 @@ def build_package(
         teaser_title="Explore React and CSS",
         teaser_description="Try list reconciliation and inspect the classes behind a BEM card.",
         image=f"{CATALOG_ASSETS}/react-demo.jpg",
-        image_alt="A cyan React atom surrounded by interface components", slugs=(REACT_ITEM[0], BEM_ITEM[0], CALLBACK_ITEM[0], MEMO_ITEM[0]),
+        image_alt="A cyan React atom surrounded by interface components", slugs=(REACT_ITEM[0], BEM_ITEM[0], CALLBACK_ITEM[0], MEMO_ITEM[0], REACT_MEMO_ITEM[0]),
     )
 
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -990,11 +997,11 @@ def build_package(
             write_jpeg_asset(package, f"{CATALOG_ASSETS}/{slug}.jpg",
                              section_image.parent / "catalog-images" / f"{slug}.jpg",
                              asset_definition)
-        for item in (REACT_ITEM, BEM_ITEM, CALLBACK_ITEM, MEMO_ITEM):
+        for item in (REACT_ITEM, BEM_ITEM, CALLBACK_ITEM, MEMO_ITEM, REACT_MEMO_ITEM):
             package.writestr(f"jcr_root{REACT_SECTION}/{item[0]}/.content.xml",
                              build_catalog_page(page, item))
         for directory, root in (("bem-card", BEM_COMPONENT), ("use-callback", CALLBACK_COMPONENT),
-                                ("use-memo", MEMO_COMPONENT)):
+                                ("use-memo", MEMO_COMPONENT), ("react-memo", REACT_MEMO_COMPONENT)):
             for source in sorted((react_source / "components" / directory).iterdir()):
                 package.write(source, f"jcr_root{root}/{source.name}")
         react_cover = SECTION_IMAGE_DEFINITION.replace(
