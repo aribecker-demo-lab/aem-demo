@@ -14,6 +14,15 @@
         <code>useRef(null)</code> creates a stable object whose <code>current</code> will later hold the
         output node. The counter returns an element tree for its label, output and button.</p>
 
+    <figure class="wknd-trace__diagram">
+        <figcaption>Mounting the React root</figcaption>
+        <ol>
+            <li><strong>AEM container</strong><span>Empty DOM mount point</span></li>
+            <li><strong>createRoot + render</strong><span>React schedules the first render</span></li>
+            <li><strong>Counter</strong><span>Props arrive and state starts at 0</span></li>
+        </ol>
+    </figure>
+
     <h3>2. Reconcile and commit the initial screen</h3>
     <p>During the render phase, React reconciles the element descriptions with its internal Fiber tree.
         A Fiber tracks a piece of the mounted UI, its state and pending work. On the first mount there
@@ -25,12 +34,30 @@
         committed update. <code>useEffect</code> runs after the commit. Depending on scheduling, it
         may run before or after the browser has painted.</p>
 
+    <figure class="wknd-trace__diagram">
+        <figcaption>Committing the initial screen</figcaption>
+        <ol>
+            <li><strong>Element tree</strong><span>&lt;output&gt;0&lt;/output&gt;</span></li>
+            <li><strong>Fiber reconciliation</strong><span>Prepare the initial DOM nodes</span></li>
+            <li><strong>DOM commit</strong><span>Mount the output and attach its ref</span></li>
+        </ol>
+    </figure>
+
     <h3>3. Click and queue a state update</h3>
     <p>The browser dispatches a click and React calls the handler associated with the button.
         That handler sees the state snapshot from the render that created it, so the first click
         sees <code>value = 0</code>. Calling <code>setValue(previous =&gt; previous + 1)</code> queues an
         updater. It does not overwrite the local <code>value</code> in that handler. React can batch
         updates and applies functional updaters in order to the pending state.</p>
+
+    <figure class="wknd-trace__diagram">
+        <figcaption>Queueing a state update</figcaption>
+        <ol>
+            <li><strong>Click</strong><span>Handler reads value = 0</span></li>
+            <li><strong>setValue</strong><span>Queue previous =&gt; previous + 1</span></li>
+            <li><strong>Pending work</strong><span>The running handler still sees 0</span></li>
+        </ol>
+    </figure>
 
     <h3>4. Render again and determine what changes</h3>
     <p>When React processes the update, the updater produces <code>1</code> and React calls the
@@ -40,6 +67,15 @@
         as the previous output. React matches children by type and position or key as applicable.
         It can preserve the output node and update its text.</p>
 
+    <figure class="wknd-trace__diagram">
+        <figcaption>Reconciling the counter update</figcaption>
+        <ol>
+            <li><strong>Render Counter</strong><span>The updater produces 1</span></li>
+            <li><strong>Match elements</strong><span>Same output type and position</span></li>
+            <li><strong>Plan the DOM update</strong><span>Reuse the node and replace its text</span></li>
+        </ol>
+    </figure>
+
     <h3>5. Commit, run effects and give the browser a chance to paint</h3>
     <p>React commits the text change to the real DOM. The layout effect reads <code>1</code> and
         compares the current DOM reference with the previous one. The ordinary effect then runs
@@ -47,6 +83,15 @@
         and composite what appears on screen. A <code>requestAnimationFrame</code> callback runs
         before a repaint. The next callback indicates a frame opportunity, without measuring
         whether the pixels were actually painted.</p>
+
+    <figure class="wknd-trace__diagram">
+        <figcaption>Applying the update and observing the browser</figcaption>
+        <ol>
+            <li><strong>Commit</strong><span>DOM text changes from 0 to 1</span></li>
+            <li><strong>Effects</strong><span>useLayoutEffect reads 1 before paint. useEffect runs after commit.</span></li>
+            <li><strong>Browser frame</strong><span>Frame callbacks show a paint opportunity</span></li>
+        </ol>
+    </figure>
 
     <h3>How to read the event log</h3>
     <p><strong>Click</strong> and <strong>Update requested</strong> are recorded in the handler.
@@ -58,7 +103,7 @@
         and discarded render attempts are internal and are not recorded here.</p>
 </article>
 <link rel="stylesheet" href="/etc.clientlibs/wknd/clientlibs/clientlib-demo-components/resources/react-index/demo.css?v=3">
-<link rel="stylesheet" href="/etc.clientlibs/wknd/clientlibs/clientlib-demo-components/resources/react-index/render-trace.css">
+<link rel="stylesheet" href="/etc.clientlibs/wknd/clientlibs/clientlib-demo-components/resources/react-index/render-trace.css?v=2">
 <script defer src="/etc.clientlibs/wknd/clientlibs/clientlib-demo-components/resources/react-index/vendor/react.production.min.js"></script>
 <script defer src="/etc.clientlibs/wknd/clientlibs/clientlib-demo-components/resources/react-index/vendor/react-dom.production.min.js"></script>
 <script defer src="/etc.clientlibs/wknd/clientlibs/clientlib-demo-components/resources/react-index/render-trace.js"></script>

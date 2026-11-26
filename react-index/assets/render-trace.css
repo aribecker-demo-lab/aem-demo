@@ -12,3 +12,56 @@
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
+
+.wknd-trace__diagram {
+    margin: 1rem 0 1.75rem;
+    padding: .85rem;
+    border: 1px solid #cbd8e8;
+    border-radius: .6rem;
+    background: #f5f8fc;
+}
+
+.wknd-trace__diagram figcaption { margin-bottom: .6rem; font-weight: 700; }
+
+.wknd-trace__diagram ol {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+    margin: 0;
+    padding: 0;
+}
+
+.wknd-trace__diagram li {
+    position: relative;
+    min-width: 0;
+    padding: .65rem .75rem;
+    border-radius: .4rem;
+    background: #e1edfa;
+    color: #183550;
+    overflow-wrap: anywhere;
+}
+
+.wknd-trace__diagram li:nth-child(2) { background: #f4e8fb; color: #43265a; }
+.wknd-trace__diagram li:nth-child(3) { background: #e0f3e9; color: #1b5039; }
+.wknd-trace__diagram li span { display: block; font-size: .9em; }
+
+.wknd-trace__diagram li + li::before {
+    position: absolute;
+    inset-inline-end: 100%;
+    width: 1.5rem;
+    text-align: center;
+    color: #456382;
+    content: "→" / "";
+}
+
+@media (max-width: 39rem) {
+    .wknd-trace__diagram ol { grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
+    .wknd-trace__diagram li + li::before {
+        content: "↓" / "";
+        inset-inline-start: 50%;
+        inset-inline-end: auto;
+        bottom: 100%;
+        transform: translateX(-50%);
+    }
+}
