@@ -1,4 +1,11 @@
 (() => {
+    // createElement (h) creates React elements from a type, props and children.
+    // memo wraps a component so React can skip re-rendering it when its props are unchanged.
+    // useCallback reuses a function reference while its dependencies remain unchanged.
+    // useEffect runs after a commit for work such as fetching. Cleanup can cancel that work.
+    // useLayoutEffect runs after DOM updates and before paint, so it can update the visible counters.
+    // useRef keeps a mutable value or DOM reference between renders. Changing it does not schedule a render.
+    // useState stores reactive state. Its setter queues an update for a later render.
     const { createElement: h, memo, useCallback, useEffect, useLayoutEffect, useRef, useState } = window.React;
 
     const sourceUrl = document.currentScript.src;
