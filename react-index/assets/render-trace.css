@@ -1,0 +1,14 @@
+.wknd-trace__log { max-height: 30rem; overflow: auto; }
+.wknd-trace__log table { width: 100%; border-collapse: collapse; }
+.wknd-trace__log th, .wknd-trace__log td {
+    padding: .35rem .5rem;
+    text-align: start;
+    vertical-align: top;
+    border-bottom: 1px solid #d5dce2;
+}
+.wknd-trace__log thead th { position: sticky; top: 0; background: #e3eefb; }
+.wknd-trace__log tbody th { color: #204978; }
+.wknd-trace__log td:first-child, .wknd-trace__log td:nth-child(2) {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
